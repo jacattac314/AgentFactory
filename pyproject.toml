@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hermes"
+version = "0.1.0"
+description = "Hermes Agent Factory - Generate safe, controlled Hermes agents from natural language"
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.0",
+    "pyyaml>=6.0",
+    "jinja2>=3.1",
+    "fastapi>=0.100",
+    "uvicorn>=0.23",
+    "anthropic>=0.25",
+    "openai>=1.30",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "slack-sdk>=3.27",
+    "google-auth-oauthlib>=1.2",
+    "google-api-python-client>=2.120",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+hermes = "hermes.cli:cli"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "--import-mode=importlib"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hermes*"]
