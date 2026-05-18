@@ -77,5 +77,23 @@ def factory_list():
     list_agents(base_dir=Path.cwd())
 
 
+@cli.command("serve")
+@click.option("--host", default="0.0.0.0", show_default=True)
+@click.option("--port", default=8000, show_default=True)
+@click.option("--reload", is_flag=True, default=False, help="Auto-reload on code changes.")
+def serve(host: str, port: int, reload: bool):
+    """Start the Hermes chat UI server."""
+    try:
+        import uvicorn
+    except ImportError:
+        click.echo("[ERROR] uvicorn not installed. Run: pip install uvicorn fastapi", err=True)
+        sys.exit(1)
+    click.echo(f"  Hermes UI → http://{host}:{port}")
+    uvicorn.run(
+        "hermes.server.app:app",
+        host=host, port=port, reload=reload,
+    )
+
+
 if __name__ == "__main__":
     cli()
