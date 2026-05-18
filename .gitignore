@@ -5,3 +5,8 @@ __pycache__/
 .pytest_cache/
 dist/
 build/
+
+# Credentials — never commit
+.env
+*.pem
+*.key
