@@ -1,0 +1,18 @@
+name: "{{ name }}"
+slug: "{{ slug }}"
+description: "{{ description | replace('"', '\\"') }}"
+version: "{{ version }}"
+enabled: false
+template_name: "{{ template_name }}"
+agent_type: "{{ agent_type }}"
+entrypoint: workflow.py
+schedule: {{ schedule | default('null', true) }}
+created_at: "{{ created_at }}"
+
+approval_required_for:
+{% for gate in approval_required_for %}
+  - {{ gate }}
+{% endfor %}
+
+user_request: |
+  {{ user_request }}

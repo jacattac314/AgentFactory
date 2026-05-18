@@ -1,0 +1,8 @@
+generated_agents:
+  an_agent_that_summarizes_my_gmail_and_posts_agent:
+    name: An Agent That Summarizes My Gmail And Posts Agent
+    path: agents/generated/an_agent_that_summarizes_my_gmail_and_posts_agent
+    enabled: false
+    template_name: briefing_agent
+    version: 0.1.0
+    created_at: '2026-05-18T17:06:40.508324+00:00'
