@@ -185,7 +185,7 @@ DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 DEFAULT_OPENAI_MODEL    = "llama3.2"
 
 
-def load_backend() -> tuple[Any, str]:
+def load_backend() -> "tuple[Any, str]":
     """
     Return (backend_instance, model_name) based on environment.
 

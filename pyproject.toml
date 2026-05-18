@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "hermes"
 version = "0.1.0"
 description = "Hermes Agent Factory - Generate safe, controlled Hermes agents from natural language"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "click>=8.0",
     "pyyaml>=6.0",
