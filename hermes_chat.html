@@ -13,12 +13,27 @@
       --font:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono','Fira Code',monospace;
     }
     html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);}
-    .layout{display:grid;grid-template-columns:280px 1fr;height:100vh;overflow:hidden;}
+    .layout{display:grid;grid-template-columns:290px 1fr;height:100vh;overflow:hidden;}
+
+    /* Sidebar */
     .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
-    .sidebar-header{padding:20px 18px 14px;border-bottom:1px solid var(--border);}
+    .sidebar-header{padding:18px 16px 14px;border-bottom:1px solid var(--border);}
     .sidebar-header h1{font-size:15px;font-weight:700;letter-spacing:.3px;}
     .sidebar-header p{font-size:11px;color:var(--muted);margin-top:3px;}
-    .agent-list{flex:1;overflow-y:auto;padding:10px 8px;}
+    .agent-list{flex:1;overflow-y:auto;padding:8px;}
+
+    /* Factory card (special) */
+    .factory-card{padding:12px;border-radius:8px;cursor:pointer;margin-bottom:8px;
+      border:1px solid var(--accent);background:linear-gradient(135deg,#1a1740,#1a2035);
+      transition:background .15s;}
+    .factory-card:hover{background:linear-gradient(135deg,#21205a,#1c2845);}
+    .factory-card.active{background:linear-gradient(135deg,#252060,#1e2f50);}
+    .factory-card-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:5px;}
+    .factory-card-desc{font-size:11px;color:var(--muted);}
+
+    .divider{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;
+      color:var(--muted);padding:8px 4px 6px;border-top:1px solid var(--border);margin-top:4px;}
+
     .agent-card{padding:12px;border-radius:8px;cursor:pointer;margin-bottom:4px;border:1px solid transparent;transition:background .15s,border-color .15s;}
     .agent-card:hover{background:var(--surface2);}
     .agent-card.active{background:var(--surface2);border-color:var(--accent);}
@@ -28,39 +43,79 @@
     .badge-template{background:#2d2763;color:var(--accent);}
     .badge-enabled{background:#0d3d28;color:var(--green);}
     .badge-disabled{background:#2d1c1c;color:var(--red);}
+    .badge-new{background:#1a3020;color:var(--accent2);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+    /* Main */
     .main{display:flex;flex-direction:column;overflow:hidden;}
-    .chat-header{padding:16px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:12px;flex-shrink:0;}
-    .chat-header-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+    .chat-header{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+    .chat-header-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .icon-factory{background:linear-gradient(135deg,var(--accent),var(--accent2));}
+    .icon-agent{background:linear-gradient(135deg,#2d2763,var(--accent));}
     .chat-header-info h2{font-size:15px;font-weight:700;}
     .chat-header-info p{font-size:11px;color:var(--muted);margin-top:2px;}
-    .chat-header-badges{margin-left:auto;display:flex;gap:8px;align-items:center;}
+    .chat-header-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
     .dry-run-toggle{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);cursor:pointer;user-select:none;}
     .dry-run-toggle input{accent-color:var(--accent);cursor:pointer;}
+
+    /* Messages */
     .messages{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;}
-    .msg{display:flex;gap:10px;max-width:780px;}
+    .msg{display:flex;gap:10px;max-width:800px;}
     .msg.user{align-self:flex-end;flex-direction:row-reverse;}
-    .msg.agent{align-self:flex-start;}
+    .msg.agent,.msg.factory{align-self:flex-start;}
     .msg-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px;}
     .msg.user .msg-avatar{background:var(--accent);}
-    .msg.agent .msg-avatar{background:linear-gradient(135deg,var(--accent),var(--accent2));}
-    .msg-body{display:flex;flex-direction:column;gap:4px;}
-    .msg-bubble{padding:11px 15px;border-radius:12px;font-size:13.5px;line-height:1.6;max-width:660px;}
+    .msg.agent .msg-avatar{background:linear-gradient(135deg,#2d2763,var(--accent));}
+    .msg.factory .msg-avatar{background:linear-gradient(135deg,var(--accent),var(--accent2));}
+    .msg-body{display:flex;flex-direction:column;gap:4px;max-width:680px;}
+    .msg-bubble{padding:11px 15px;border-radius:12px;font-size:13.5px;line-height:1.65;}
     .msg.user .msg-bubble{background:var(--accent);color:#fff;border-top-right-radius:3px;}
-    .msg.agent .msg-bubble{background:var(--surface2);color:var(--text);border-top-left-radius:3px;}
-    .msg-bubble strong{font-weight:700;}
-    .msg-bubble em{color:var(--muted);font-style:italic;}
+    .msg.agent .msg-bubble,.msg.factory .msg-bubble{background:var(--surface2);color:var(--text);border-top-left-radius:3px;}
+    .msg-bubble b{font-weight:700;}
+    .msg-bubble em{color:var(--muted);}
+    .msg-bubble code{font-family:var(--mono);font-size:12px;background:#0f1a2e;padding:1px 5px;border-radius:4px;color:var(--accent2);}
+
+    /* Quick-reply chips */
+    .quick-replies{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;}
+    .qr-chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);
+      font-size:12px;color:var(--text);cursor:pointer;transition:background .15s,border-color .15s;}
+    .qr-chip:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+    /* Spec card */
+    .spec-card{margin-top:10px;padding:14px 16px;background:#0a0f1e;border:1px solid var(--border);border-radius:10px;font-size:12.5px;}
+    .spec-card .spec-title{font-weight:700;color:var(--accent2);margin-bottom:10px;font-size:13px;}
+    .spec-row{display:flex;gap:8px;margin-bottom:6px;align-items:flex-start;}
+    .spec-label{color:var(--muted);min-width:110px;font-size:11px;padding-top:1px;}
+    .spec-value{color:var(--text);}
+    .spec-tools{display:flex;gap:5px;flex-wrap:wrap;}
+    .tool-chip{font-size:10px;padding:2px 8px;border-radius:12px;font-family:var(--mono);}
+    .tool-allow{background:#0d3d28;color:var(--green);}
+    .tool-deny{background:#2d1c1c;color:var(--red);}
+    .spec-actions{margin-top:12px;display:flex;gap:8px;}
+    .btn{padding:7px 16px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s;}
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-primary:hover{background:#7c74ff;}
+    .btn-ghost{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+    .btn-ghost:hover{color:var(--text);border-color:var(--text);}
+
+    /* Planned actions */
     .planned-actions{margin-top:10px;padding:10px 13px;background:#0f1a2e;border:1px solid #1e3a5f;border-radius:8px;font-family:var(--mono);font-size:11.5px;color:var(--accent2);}
     .planned-actions .pa-title{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;font-family:var(--font);}
-    .planned-actions .pa-item{display:flex;gap:6px;align-items:flex-start;margin-bottom:3px;}
-    .planned-actions .pa-item::before{content:'→';color:var(--accent);flex-shrink:0;}
-    .status-chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:.3px;align-self:flex-start;}
+    .planned-actions .pa-item::before{content:'→ ';color:var(--accent);}
+
+    .status-chip{display:inline-flex;align-items:center;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;}
     .status-dry_run{background:#1e2d4a;color:var(--accent2);}
+    .status-created{background:#0d3d28;color:var(--green);}
     .msg-time{font-size:10px;color:var(--muted);padding:0 4px;}
+
+    /* Typing */
     .typing{display:flex;gap:4px;align-items:center;padding:4px 0;}
     .typing span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:bounce .9s infinite;}
     .typing span:nth-child(2){animation-delay:.15s;}
     .typing span:nth-child(3){animation-delay:.3s;}
     @keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+    /* Input */
     .input-bar{padding:16px 24px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;display:flex;gap:10px;align-items:flex-end;}
     .input-bar textarea{flex:1;resize:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:13.5px;padding:11px 14px;outline:none;max-height:120px;transition:border-color .15s;}
     .input-bar textarea:focus{border-color:var(--accent);}
@@ -68,10 +123,11 @@
     .send-btn{width:40px;height:40px;border-radius:10px;border:none;cursor:pointer;background:var(--accent);color:#fff;font-size:16px;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .1s;flex-shrink:0;}
     .send-btn:hover{background:#7c74ff;}
     .send-btn:active{transform:scale(.95);}
+    .send-btn:disabled{background:var(--border);cursor:not-allowed;}
+
     .no-selection{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);}
     .no-selection .big{font-size:56px;}
     .no-selection h2{font-size:18px;font-weight:700;color:var(--text);}
-    .no-selection p{font-size:13px;}
     ::-webkit-scrollbar{width:5px;}
     ::-webkit-scrollbar-track{background:transparent;}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
@@ -82,60 +138,355 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <h1>⚗️ Hermes Factory</h1>
-      <p>Select an agent to chat with</p>
+      <p>Create and chat with agents</p>
     </div>
     <div class="agent-list" id="agentList"></div>
   </aside>
   <main class="main" id="main">
     <div class="no-selection">
-      <div class="big">🤖</div>
-      <h2>No agent selected</h2>
-      <p>Pick an agent from the sidebar to start chatting.</p>
+      <div class="big">⚗️</div>
+      <h2>Welcome to Hermes</h2>
+      <p style="font-size:13px;text-align:center;max-width:300px">Use the <b>Agent Factory</b> to create new agents, or select an existing agent to chat.</p>
     </div>
   </main>
 </div>
 
 <script>
-// ── Embedded agent data (generated from registry.yaml) ───────────────────────
-const AGENTS = [
+// ── Seed agents from registry ─────────────────────────────────────────────────
+const SEED_AGENTS = [
   {
-    "slug": "an_agent_that_summarizes_my_gmail_and_posts_agent",
-    "name": "An Agent That Summarizes My Gmail And Posts Agent",
-    "enabled": true,
-    "template_name": "briefing_agent",
-    "version": "0.1.0",
-    "description": "Auto-generated agent: Create an agent that summarizes my Gmail and posts a morning brief to Slack",
-    "allowed_tools": {"gmail": ["search","read"],"slack": ["post_message","read_channel"]},
-    "denied_tools": {"gmail": ["send","delete","modify_labels","create_draft"],"slack": ["delete_message","invite_users","create_channel"],"shell": ["execute","run_command","eval"],"filesystem": ["delete","write_sensitive","unlink","rmtree"],"package_manager": ["install","uninstall","upgrade"],"cloud": ["deploy","provision","destroy"]},
-    "approval_required_for": ["sending_email","deleting_files","modifying_code","installing_packages","cloud_deployment","posting_to_external_services"]
+    slug:"an_agent_that_summarizes_my_gmail_and_posts_agent",
+    name:"Gmail Morning Brief Agent",
+    enabled:true, template_name:"briefing_agent", version:"0.1.0",
+    description:"Summarises Gmail and posts a morning brief to Slack",
+    allowed_tools:{gmail:["search","read"],slack:["post_message","read_channel"]},
+    denied_tools:{gmail:["send","delete","modify_labels"],slack:["delete_message","invite_users"],shell:["execute","run_command"],filesystem:["delete","write_sensitive"],package_manager:["install"],cloud:["deploy"]},
+    approval_required_for:["sending_email","deleting_files","cloud_deployment"],
+    _seed:true
   },
   {
-    "slug": "watch_my_slack_channel_for_risk_alerts_and_agent",
-    "name": "Watch My Slack Channel For Risk Alerts And Agent",
-    "enabled": false,
-    "template_name": "monitor_agent",
-    "version": "0.1.0",
-    "description": "Auto-generated agent: Watch my Slack channel for risk alerts and notify me",
-    "allowed_tools": {"slack": ["post_message","read_channel"]},
-    "denied_tools": {"slack": ["delete_message","invite_users","create_channel"],"shell": ["execute","run_command","eval"],"filesystem": ["delete","write_sensitive","unlink","rmtree"],"package_manager": ["install","uninstall","upgrade"],"cloud": ["deploy","provision","destroy"]},
-    "approval_required_for": ["sending_email","deleting_files","modifying_code","installing_packages","cloud_deployment","posting_to_external_services"]
+    slug:"watch_my_slack_channel_for_risk_alerts_and_agent",
+    name:"Slack Risk Monitor Agent",
+    enabled:false, template_name:"monitor_agent", version:"0.1.0",
+    description:"Watches Slack channels for risk alerts",
+    allowed_tools:{slack:["post_message","read_channel"]},
+    denied_tools:{slack:["delete_message","invite_users"],shell:["execute","run_command"],filesystem:["delete","write_sensitive"],package_manager:["install"],cloud:["deploy"]},
+    approval_required_for:["sending_email","deleting_files","cloud_deployment"],
+    _seed:true
   },
   {
-    "slug": "research_web_sources_and_write_a_weekly_report_agent",
-    "name": "Research Web Sources And Write A Weekly Report Agent",
-    "enabled": false,
-    "template_name": "research_agent",
-    "version": "0.1.0",
-    "description": "Auto-generated agent: Research web sources and write a weekly report",
-    "allowed_tools": {"web": ["fetch_url","search"]},
-    "denied_tools": {"shell": ["execute","run_command","eval"],"filesystem": ["delete","write_sensitive","unlink","rmtree"],"package_manager": ["install","uninstall","upgrade"],"cloud": ["deploy","provision","destroy"]},
-    "approval_required_for": ["sending_email","deleting_files","modifying_code","installing_packages","cloud_deployment","posting_to_external_services"]
+    slug:"research_web_sources_and_write_a_weekly_report_agent",
+    name:"Web Research Report Agent",
+    enabled:false, template_name:"research_agent", version:"0.1.0",
+    description:"Researches web sources and writes a weekly report",
+    allowed_tools:{web:["fetch_url","search"]},
+    denied_tools:{shell:["execute","run_command"],filesystem:["delete","write_sensitive"],package_manager:["install"],cloud:["deploy"]},
+    approval_required_for:["sending_email","deleting_files","cloud_deployment"],
+    _seed:true
   }
 ];
 
-// ── Simulate workflow logic (mirrors workflow.py dry-run behaviour) ───────────
-function simulateWorkflow(agent, userMessage) {
-  const tools = agent.allowed_tools || {};
+// ── Factory conversation state machine ────────────────────────────────────────
+const FACTORY_STATES = {
+  IDLE:          'idle',
+  CLARIFYING:    'clarifying',
+  CONFIRMING:    'confirming',
+  DONE:          'done',
+};
+
+// Per-template clarifying questions
+const QUESTIONS = {
+  briefing_agent: [
+    { key:'schedule',      q:'What time should the brief run? (e.g. <code>8:00 AM</code> — or hit Enter to skip for on-demand)', suggestions:['8:00 AM','7:30 AM','9:00 AM','On demand'] },
+    { key:'slack_channel', q:'Which Slack channel should it post to?', suggestions:['#general','#morning-brief','#team-updates','Skip'] },
+  ],
+  monitor_agent: [
+    { key:'trigger',       q:'What events or keywords should trigger an alert? (e.g. <code>risk, outage, urgent</code>)', suggestions:['risk, outage, urgent','recruiter, job offer','error, exception','Any message'] },
+    { key:'slack_channel', q:'Which Slack channel should alerts go to?', suggestions:['#alerts','#incidents','#general','Skip'] },
+  ],
+  research_agent: [
+    { key:'topics',  q:'What topics or questions should it research?', suggestions:['AI news this week','Competitor analysis','Industry trends','Custom…'] },
+    { key:'output',  q:'Where should the report be delivered?', suggestions:['#research','#weekly-digest','Email summary','Skip'] },
+  ],
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let agents = [...SEED_AGENTS];
+let activeSlug = null;          // null = factory, else agent slug
+let histories  = {};            // slug → messages
+let dryRun     = true;
+
+// Factory conversation state
+let factoryState   = FACTORY_STATES.IDLE;
+let pendingRequest = '';
+let pendingTemplate= '';
+let pendingAnswers = {};
+let pendingQIdx    = 0;
+let pendingSpec    = null;
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const isFactoryActive = activeSlug === null;
+  const list = document.getElementById('agentList');
+  const newAgents = agents.filter(a => a._new);
+  const seedAgents = agents.filter(a => !a._new);
+
+  let html = `
+    <div class="factory-card ${isFactoryActive?'active':''}" onclick="selectFactory()">
+      <div class="factory-card-name">⚗️ Agent Factory</div>
+      <div class="factory-card-desc">Create new agents from natural language</div>
+    </div>`;
+
+  if (newAgents.length) {
+    html += `<div class="divider">✦ Just created</div>`;
+    html += newAgents.map(a => agentCardHTML(a)).join('');
+  }
+
+  html += `<div class="divider">Existing agents</div>`;
+  html += seedAgents.map(a => agentCardHTML(a)).join('');
+
+  list.innerHTML = html;
+}
+
+function agentCardHTML(a) {
+  return `<div class="agent-card ${a.slug===activeSlug?'active':''}" onclick="selectAgent('${a.slug}')">
+    <div class="agent-card-name">${a.name}</div>
+    <div class="agent-card-meta">
+      <span class="badge badge-template">${a.template_name.replace('_agent','')}</span>
+      <span class="badge ${a.enabled?'badge-enabled':'badge-disabled'}">${a.enabled?'enabled':'disabled'}</span>
+      ${a._new?'<span class="badge badge-new">new</span>':''}
+    </div>
+  </div>`;
+}
+
+// ── Select factory ────────────────────────────────────────────────────────────
+function selectFactory() {
+  activeSlug = null;
+  if (!histories['__factory__']) histories['__factory__'] = [];
+  renderSidebar();
+
+  document.getElementById('main').innerHTML = `
+    <div class="chat-header">
+      <div class="chat-header-icon icon-factory">⚗️</div>
+      <div class="chat-header-info">
+        <h2>Agent Factory</h2>
+        <p>Describe an agent and I'll build it for you</p>
+      </div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-bar">
+      <textarea id="msgInput" rows="1" placeholder="Describe an agent you want to create…"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendFactory()">➤</button>
+    </div>`;
+
+  if (!histories['__factory__'].length) {
+    pushMsg('__factory__','factory',`<b>👋 Hi! I'm the Hermes Agent Factory.</b><br><br>
+      Tell me what you'd like an agent to do, and I'll ask a couple of quick questions before generating it.<br><br>
+      <em>Examples:</em><br>
+      • "Create an agent that summarises my Gmail and posts to Slack"<br>
+      • "Build an agent that monitors Slack for risk alerts"<br>
+      • "Make a research agent that tracks AI news weekly"`,
+      [], null);
+  }
+
+  renderFactoryMessages();
+  document.getElementById('msgInput').focus();
+}
+
+// ── Select agent ──────────────────────────────────────────────────────────────
+function selectAgent(slug) {
+  activeSlug = slug;
+  const agent = agents.find(a=>a.slug===slug);
+  if (!histories[slug]) histories[slug] = [];
+  renderSidebar();
+
+  document.getElementById('main').innerHTML = `
+    <div class="chat-header">
+      <div class="chat-header-icon icon-agent">🤖</div>
+      <div class="chat-header-info">
+        <h2>${agent.name}</h2>
+        <p>${agent.description}</p>
+      </div>
+      <div class="chat-header-right">
+        <span class="badge ${agent.enabled?'badge-enabled':'badge-disabled'}">${agent.enabled?'● enabled':'○ disabled'}</span>
+        <label class="dry-run-toggle"><input type="checkbox" ${dryRun?'checked':''} onchange="dryRun=this.checked"> dry-run</label>
+      </div>
+    </div>
+    <div class="messages" id="messages"></div>
+    <div class="input-bar">
+      <textarea id="msgInput" rows="1" placeholder="Ask the agent something…"
+        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendAgent()">➤</button>
+    </div>`;
+
+  if (!histories[slug].length) {
+    const allowed = Object.entries(agent.allowed_tools||{}).map(([s,ops])=>`<b>${s}</b>: ${ops.join(', ')}`).join(' · ') || 'none';
+    const denied  = Object.entries(agent.denied_tools ||{}).filter(([,v])=>v&&v.length).map(([s,ops])=>`<b>${s}</b>: ${(ops||[]).join(', ')}`).join(' · ') || 'none';
+    pushMsg(slug,'agent',`<b>👋 Hi! I'm ${agent.name}.</b><br><br>
+      Running in <b>dry-run mode</b> — I'll show what I'd do without touching anything real.<br><br>
+      <span style="color:var(--green)">✓ Allowed:</span> ${allowed}<br>
+      <span style="color:var(--red)">✗ Denied:</span> ${denied}`,
+      [], null);
+  }
+  renderAgentMessages();
+  document.getElementById('msgInput').focus();
+}
+
+// ── Factory conversation ───────────────────────────────────────────────────────
+async function sendFactory() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text) return;
+  input.value = ''; autoResize(input);
+
+  pushMsg('__factory__','user', escHtml(text), [], null);
+  renderFactoryMessages();
+  document.getElementById('sendBtn').disabled = true;
+  await showTyping('__factory__', 800);
+
+  if (factoryState === FACTORY_STATES.IDLE) {
+    // Analyse request
+    pendingRequest  = text;
+    pendingTemplate = detectTemplate(text);
+    pendingAnswers  = {};
+    pendingQIdx     = 0;
+    pendingSpec     = null;
+
+    const tName = pendingTemplate.replace('_',' ').replace('agent','').trim();
+    factoryState = FACTORY_STATES.CLARIFYING;
+
+    const qs = QUESTIONS[pendingTemplate] || [];
+    if (qs.length) {
+      const q = qs[0];
+      pushMsg('__factory__','factory',
+        `Got it — that sounds like a <b>${tName} agent</b>. Let me ask a couple of quick questions.<br><br>${q.q}`,
+        [], null, q.suggestions);
+    } else {
+      // No questions, go straight to spec
+      await buildAndConfirm();
+    }
+
+  } else if (factoryState === FACTORY_STATES.CLARIFYING) {
+    const qs = QUESTIONS[pendingTemplate] || [];
+    const currentQ = qs[pendingQIdx];
+    pendingAnswers[currentQ.key] = text;
+    pendingQIdx++;
+
+    if (pendingQIdx < qs.length) {
+      const nextQ = qs[pendingQIdx];
+      pushMsg('__factory__','factory', nextQ.q, [], null, nextQ.suggestions);
+    } else {
+      factoryState = FACTORY_STATES.CONFIRMING;
+      await buildAndConfirm();
+    }
+
+  } else if (factoryState === FACTORY_STATES.CONFIRMING) {
+    const yes = /^(yes|y|create|go|ok|confirm|do it|generate|build|make|sure|yeah|yep)/i.test(text);
+    const no  = /^(no|n|cancel|stop|abort|nevermind|nope)/i.test(text);
+
+    if (yes) {
+      await finaliseAgent();
+    } else if (no) {
+      factoryState = FACTORY_STATES.IDLE;
+      pushMsg('__factory__','factory','No problem — cancelled. What would you like to create instead?', [], null);
+    } else {
+      pushMsg('__factory__','factory',
+        `Just confirming — type <b>create</b> to generate this agent, or <b>cancel</b> to start over.`, [], null,
+        ['Create it','Cancel']);
+    }
+  } else if (factoryState === FACTORY_STATES.DONE) {
+    factoryState = FACTORY_STATES.IDLE;
+    pendingRequest = '';
+    // Treat as new request
+    input.value = text;
+    document.getElementById('sendBtn').disabled = false;
+    sendFactory(); return;
+  }
+
+  renderFactoryMessages();
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('msgInput')?.focus();
+}
+
+async function buildAndConfirm() {
+  pendingSpec = buildSpec(pendingRequest, pendingTemplate, pendingAnswers);
+  const specHTML = renderSpecCard(pendingSpec, false);
+  pushMsg('__factory__','factory',
+    `Here's what I'll create:<br><br>${specHTML}<br>Type <b>create</b> to generate it, or <b>cancel</b> to start over.`,
+    [], null, ['Create it','Cancel']);
+}
+
+async function finaliseAgent() {
+  await showTyping('__factory__', 1200);
+
+  // Add to agents list
+  const newAgent = {
+    ...pendingSpec,
+    _new: true,
+    _fromFactory: true,
+  };
+  agents.unshift(newAgent);
+
+  const specHTML = renderSpecCard(pendingSpec, true);
+  pushMsg('__factory__','factory',
+    `✅ <b>Agent created!</b><br><br>${specHTML}<br>
+     <em>Click <b>${escHtml(pendingSpec.name)}</b> in the sidebar to start chatting with it.</em>`,
+    [], 'created');
+
+  factoryState = FACTORY_STATES.DONE;
+  renderFactoryMessages();
+  renderSidebar();
+
+  // Flash the new agent card
+  setTimeout(() => {
+    const cards = document.querySelectorAll('.agent-card');
+    cards.forEach(c => { if (c.textContent.includes(pendingSpec.name.substring(0,20))) c.style.boxShadow='0 0 0 2px var(--accent2)'; });
+    setTimeout(() => cards.forEach(c => c.style.boxShadow=''), 2000);
+  }, 100);
+}
+
+// Quick-reply chips
+function quickReply(text) {
+  const input = document.getElementById('msgInput');
+  if (input) { input.value = text; }
+  if (activeSlug === null) sendFactory();
+  else sendAgent();
+}
+
+// ── Agent conversation ────────────────────────────────────────────────────────
+async function sendAgent() {
+  const input = document.getElementById('msgInput');
+  const text  = input.value.trim();
+  if (!text || !activeSlug) return;
+  input.value = ''; autoResize(input);
+
+  pushMsg(activeSlug,'user', escHtml(text), [], null);
+  renderAgentMessages();
+  document.getElementById('sendBtn').disabled = true;
+  await showTyping(activeSlug, 700);
+
+  const agent  = agents.find(a=>a.slug===activeSlug);
+  const result = simulateWorkflow(agent, text);
+
+  let html;
+  if (result.planned.length) {
+    html = `<b>Dry run</b> — here's what I'd do for: <em>${escHtml(text)}</em>`;
+  } else {
+    html = `<b>Dry run</b> — no specific actions mapped for: <em>${escHtml(text)}</em>`;
+  }
+  html += `<br><br><em style="color:var(--muted)">${escHtml(result.message)}</em>`;
+
+  pushMsg(activeSlug,'agent', html, result.planned, 'dry_run');
+  renderAgentMessages();
+  document.getElementById('sendBtn').disabled = false;
+  document.getElementById('msgInput')?.focus();
+}
+
+// ── Workflow simulation ───────────────────────────────────────────────────────
+function simulateWorkflow(agent, userMsg) {
+  const tools   = agent.allowed_tools || {};
+  const msg     = userMsg.toLowerCase();
   const planned = [];
 
   if (agent.template_name === 'briefing_agent') {
@@ -143,158 +494,157 @@ function simulateWorkflow(agent, userMessage) {
     if (tools.calendar) { planned.push('calendar.read_events — fetch upcoming events'); }
     if (tools.web)      { planned.push('web.search — gather supporting information'); }
     planned.push('compose — synthesise information into a brief');
-    if (tools.slack)    { planned.push('slack.post_message — post brief to channel'); }
+    if (tools.slack)    {
+      const ch = agent._answers?.slack_channel || '#general';
+      planned.push(`slack.post_message → ${ch} — post brief`);
+    }
   } else if (agent.template_name === 'monitor_agent') {
     if (tools.slack) { planned.push('slack.read_channel — scan for flagged messages'); }
-    if (tools.gmail) { planned.push('gmail.search — search for trigger keywords'); planned.push('gmail.read — read flagged message content'); }
+    if (tools.gmail) { planned.push('gmail.search — search for trigger keywords'); }
     planned.push('evaluate — classify events by severity');
-    if (tools.slack) { planned.push('slack.post_message — send alert summary'); }
+    if (tools.slack) {
+      const ch = agent._answers?.slack_channel || '#alerts';
+      planned.push(`slack.post_message → ${ch} — send alert summary`);
+    }
   } else if (agent.template_name === 'research_agent') {
-    if (tools.web)   { planned.push('web.search — search for relevant sources'); planned.push('web.fetch_url — retrieve source content'); }
-    if (tools.gmail) { planned.push('gmail.search — search for relevant documents'); planned.push('gmail.read — read document content'); }
-    planned.push('synthesise — extract key findings and build report');
-    if (tools.slack) { planned.push('slack.post_message — post research report'); }
+    if (tools.web)   { planned.push(`web.search — "${agent._answers?.topics||'research topics'}"`); planned.push('web.fetch_url — retrieve source content'); }
+    if (tools.gmail) { planned.push('gmail.search — find relevant documents'); }
+    planned.push('synthesise — extract key findings');
+    if (tools.slack) { planned.push(`slack.post_message → ${agent._answers?.output||'#research'} — deliver report`); }
   }
 
-  const keywords = userMessage.toLowerCase();
-  const contextual = [];
-  if (/gmail|email|inbox|message/.test(keywords) && tools.gmail)
-    contextual.push(`gmail.search — searching for "${userMessage.substring(0,40)}..."`);
-  if (/slack|post|channel/.test(keywords) && tools.slack)
-    contextual.push('slack.post_message — posting result to channel');
-  if (/search|research|find|look/.test(keywords) && tools.web)
-    contextual.push(`web.search — searching for "${userMessage.substring(0,40)}..."`);
+  // Contextual overrides based on message
+  const ctx = [];
+  if (/gmail|email|inbox/.test(msg) && tools.gmail)  ctx.push(`gmail.search — "${userMsg.substring(0,35)}"`);
+  if (/slack|post|channel/.test(msg) && tools.slack) ctx.push('slack.post_message — posting result');
+  if (/search|research|find/.test(msg) && tools.web) ctx.push(`web.search — "${userMsg.substring(0,35)}"`);
 
   return {
-    status: 'dry_run',
-    planned_actions: contextual.length ? contextual : planned,
+    planned: ctx.length ? ctx : planned,
     message: 'No external actions were performed. This was a dry run.',
   };
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let activeSlug = null;
-let histories = {};
-let dryRun = true;
+// ── Spec builder ──────────────────────────────────────────────────────────────
+function detectTemplate(text) {
+  const t = text.toLowerCase();
+  const briefScore   = score(t, ['gmail','email','calendar','morning','brief','daily','summary','digest','inbox']);
+  const monitorScore = score(t, ['monitor','watch','alert','risk','notify','channel','trigger','detect','incident']);
+  const researchScore= score(t, ['research','web','report','sources','summarize','document','paper','search','crawl']);
+  if (briefScore >= monitorScore && briefScore >= researchScore) return 'briefing_agent';
+  if (monitorScore >= researchScore) return 'monitor_agent';
+  return 'research_agent';
+}
+function score(text, keywords) { return keywords.filter(k=>text.includes(k)).length; }
 
-// ── Sidebar ───────────────────────────────────────────────────────────────────
-function renderSidebar() {
-  document.getElementById('agentList').innerHTML = AGENTS.map(a => `
-    <div class="agent-card ${a.slug === activeSlug ? 'active' : ''}" onclick="selectAgent('${a.slug}')">
-      <div class="agent-card-name">${a.name}</div>
-      <div class="agent-card-meta">
-        <span class="badge badge-template">${a.template_name.replace('_agent','')}</span>
-        <span class="badge ${a.enabled ? 'badge-enabled':'badge-disabled'}">${a.enabled ? 'enabled':'disabled'}</span>
-      </div>
-    </div>`).join('');
+function buildSpec(request, template, answers) {
+  const allowed = {}, denied = {};
+  const t = request.toLowerCase();
+
+  if (/gmail|email|inbox/.test(t))    { allowed.gmail=['search','read'];    denied.gmail=['send','delete','modify_labels']; }
+  if (/slack|post|channel/.test(t))   { allowed.slack=['post_message','read_channel']; denied.slack=['delete_message','invite_users']; }
+  if (/calendar|events/.test(t))      { allowed.calendar=['read_events'];   denied.calendar=['create_event','delete_event']; }
+  if (/web|research|search/.test(t))  { allowed.web=['fetch_url','search']; }
+  if (/notion/.test(t))               { allowed.notion=['read_page','read_database']; denied.notion=['create_page','delete_page']; }
+  if (/github/.test(t))               { allowed.github=['read_repo','list_issues']; denied.github=['push_code','merge_pr']; }
+  denied.shell=['execute','run_command','eval'];
+  denied.filesystem=['delete','write_sensitive'];
+  denied.package_manager=['install'];
+  denied.cloud=['deploy'];
+
+  const words = request.split(' ').filter(w=>!/^(create|make|build|an|a|that|the|my|and|for|to|i|me)/i.test(w));
+  const name = words.slice(0,6).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ')+' Agent';
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,50);
+
+  const schedule = answers.schedule && !/on.demand|skip/i.test(answers.schedule) ? answers.schedule : null;
+
+  return {
+    slug, name,
+    enabled: false,
+    template_name: template,
+    version: '0.1.0',
+    description: `Auto-generated: ${request.substring(0,100)}`,
+    allowed_tools: allowed,
+    denied_tools: denied,
+    approval_required_for: ['sending_email','deleting_files','cloud_deployment','posting_to_external_services'],
+    schedule,
+    _answers: answers,
+  };
 }
 
-function selectAgent(slug) {
-  activeSlug = slug;
-  if (!histories[slug]) histories[slug] = [];
-  renderSidebar();
-  renderMain();
+function renderSpecCard(spec, created) {
+  const allowedChips = Object.entries(spec.allowed_tools||{})
+    .map(([s,ops])=>`<span class="tool-chip tool-allow">${s}: ${ops.join(', ')}</span>`).join('');
+  const deniedChips  = Object.entries(spec.denied_tools||{})
+    .filter(([,v])=>v&&v.length)
+    .map(([s,ops])=>`<span class="tool-chip tool-deny">${s}: ${(ops||[]).join(', ')}</span>`).join('');
+  return `<div class="spec-card">
+    <div class="spec-title">${created?'✅ ':''}<b>${escHtml(spec.name)}</b></div>
+    <div class="spec-row"><span class="spec-label">Template</span><span class="spec-value">${spec.template_name.replace('_',' ')}</span></div>
+    <div class="spec-row"><span class="spec-label">Enabled</span><span class="spec-value" style="color:var(--red)">false (disabled by default)</span></div>
+    ${spec.schedule?`<div class="spec-row"><span class="spec-label">Schedule</span><span class="spec-value">${escHtml(spec.schedule)}</span></div>`:''}
+    <div class="spec-row"><span class="spec-label">Allowed tools</span><div class="spec-tools">${allowedChips||'<em>none</em>'}</div></div>
+    <div class="spec-row"><span class="spec-label">Always denied</span><div class="spec-tools">${deniedChips}</div></div>
+    <div class="spec-row"><span class="spec-label">Approval gates</span><span class="spec-value" style="color:var(--muted)">${spec.approval_required_for.join(', ')}</span></div>
+  </div>`;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-function renderMain() {
-  const agent = AGENTS.find(a => a.slug === activeSlug);
-  document.getElementById('main').innerHTML = `
-    <div class="chat-header">
-      <div class="chat-header-icon">🤖</div>
-      <div class="chat-header-info">
-        <h2>${agent.name}</h2>
-        <p>${agent.description}</p>
-      </div>
-      <div class="chat-header-badges">
-        <span class="badge ${agent.enabled ? 'badge-enabled':'badge-disabled'}">${agent.enabled ? '● enabled':'○ disabled'}</span>
-        <label class="dry-run-toggle">
-          <input type="checkbox" ${dryRun?'checked':''} onchange="dryRun=this.checked"> dry-run
-        </label>
-      </div>
-    </div>
-    <div class="messages" id="messages"></div>
-    <div class="input-bar">
-      <textarea id="msgInput" rows="1" placeholder="Ask the agent something…"
-        onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-      <button class="send-btn" id="sendBtn" onclick="send()">➤</button>
-    </div>`;
-
-  if (!histories[activeSlug].length) {
-    const allowed = Object.entries(agent.allowed_tools||{}).map(([s,ops])=>`<b>${s}</b>: ${ops.join(', ')}`).join(' &nbsp;·&nbsp; ') || 'none';
-    const denied  = Object.entries(agent.denied_tools ||{}).filter(([,v])=>v).map(([s,ops])=>`<b>${s}</b>: ${ops.join(', ')}`).join(' &nbsp;·&nbsp; ') || 'none';
-    histories[activeSlug].push({
-      role:'agent',
-      html:`<b>👋 Hi! I'm ${agent.name}.</b><br><br>
-        I run in <b>dry-run mode</b> — I'll show you exactly what I <em>would</em> do without touching anything real.<br><br>
-        <span style="color:var(--green)">✓ Allowed:</span> ${allowed}<br>
-        <span style="color:var(--red)">✗ Denied:</span> ${denied}`,
-      planned:[],status:null,time:now()
-    });
-  }
-  renderMessages();
-  document.getElementById('msgInput').focus();
+// ── Message helpers ───────────────────────────────────────────────────────────
+function pushMsg(key, role, html, planned, status, suggestions) {
+  if (!histories[key]) histories[key] = [];
+  histories[key].push({ role, html, planned:planned||[], status, suggestions, time:now() });
 }
 
-// ── Messages ──────────────────────────────────────────────────────────────────
-function renderMessages() {
+function renderFactoryMessages() { renderMessages('__factory__', 'factory'); }
+function renderAgentMessages()   { renderMessages(activeSlug, 'agent'); }
+
+function renderMessages(key, defaultRole) {
   const el = document.getElementById('messages');
   if (!el) return;
-  el.innerHTML = (histories[activeSlug]||[]).map(m => {
-    const avatar = m.role==='user'?'🧑':'🤖';
-    const bubbleContent = m.html || escHtml(m.content||'');
-    const extra = m.planned&&m.planned.length
+  el.innerHTML = (histories[key]||[]).map(m => {
+    const avatar = m.role==='user'?'🧑': (key==='__factory__'?'⚗️':'🤖');
+    const extra  = m.planned&&m.planned.length
       ? `<div class="planned-actions"><div class="pa-title">Planned actions</div>${m.planned.map(p=>`<div class="pa-item">${escHtml(p)}</div>`).join('')}</div>` : '';
-    const chip  = m.status ? `<span class="status-chip status-${m.status}">${m.status.replace('_',' ')}</span>` : '';
+    const chip   = m.status ? `<span class="status-chip status-${m.status}">${m.status.replace('_',' ')}</span>` : '';
+    const qr     = m.suggestions&&m.suggestions.length
+      ? `<div class="quick-replies">${m.suggestions.map(s=>`<div class="qr-chip" onclick="quickReply('${escAttr(s)}')">${escHtml(s)}</div>`).join('')}</div>` : '';
     return `<div class="msg ${m.role}">
       <div class="msg-avatar">${avatar}</div>
       <div class="msg-body">
-        <div class="msg-bubble">${bubbleContent}</div>${extra}
+        <div class="msg-bubble">${m.html||escHtml(m.content||'')}</div>
+        ${extra}${qr}
         <div style="display:flex;gap:8px;align-items:center">${chip}<span class="msg-time">${m.time||''}</span></div>
       </div></div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
 }
 
-// ── Send ──────────────────────────────────────────────────────────────────────
-async function send() {
-  const input = document.getElementById('msgInput');
-  const text  = input.value.trim();
-  if (!text || !activeSlug) return;
-  input.value = ''; autoResize(input);
-
-  histories[activeSlug].push({role:'user',content:text,planned:[],status:null,time:now()});
-  renderMessages();
-
-  // Show typing
-  histories[activeSlug].push({role:'agent',_typing:true,html:'<div class="typing"><span></span><span></span><span></span></div>',planned:[],time:''});
-  renderMessages();
-
-  await delay(600 + Math.random()*600);
-
-  // Remove typing, add real reply
-  histories[activeSlug] = histories[activeSlug].filter(m=>!m._typing);
-  const agent  = AGENTS.find(a=>a.slug===activeSlug);
-  const result = simulateWorkflow(agent, text);
-
-  let html;
-  if (result.planned_actions.length) {
-    html = `<b>Dry run</b> — here's what I would do for: <em>${escHtml(text)}</em>`;
-  } else {
-    html = `<b>Dry run</b> — no specific actions mapped yet for: <em>${escHtml(text)}</em>`;
+async function showTyping(key, ms) {
+  const el = document.getElementById('messages');
+  if (el) {
+    const id = 'typing-'+Date.now();
+    const avatar = key==='__factory__'?'⚗️':'🤖';
+    el.innerHTML += `<div id="${id}" class="msg agent">
+      <div class="msg-avatar">${avatar}</div>
+      <div class="msg-body"><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div></div>`;
+    el.scrollTop = el.scrollHeight;
+    await delay(ms);
+    document.getElementById(id)?.remove();
   }
-  html += `<br><br><em style="color:var(--muted)">${escHtml(result.message)}</em>`;
-
-  histories[activeSlug].push({role:'agent',html,planned:result.planned_actions,status:result.status,time:now()});
-  renderMessages();
 }
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
-function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} }
-function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
-function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
-function now() { return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
-function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function handleKey(e) {
+  if (e.key==='Enter'&&!e.shiftKey) {
+    e.preventDefault();
+    activeSlug===null ? sendFactory() : sendAgent();
+  }
+}
+function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function now(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return String(s).replace(/'/g,"\\'"); }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderSidebar();
