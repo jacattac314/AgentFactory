@@ -15,6 +15,17 @@ from hermes.factory.factory_service import (
 )
 
 
+def _load_dotenv():
+    """Load .env if present."""
+    env_file = Path.cwd() / ".env"
+    if env_file.exists():
+        try:
+            from dotenv import load_dotenv
+            load_dotenv(env_file)
+        except ImportError:
+            pass
+
+
 @click.group()
 def cli():
     """Hermes — Controlled agent generation framework."""
@@ -75,6 +86,88 @@ def factory_enable(agent_slug: str):
 def factory_list():
     """List all generated agents."""
     list_agents(base_dir=Path.cwd())
+
+
+@cli.command("run")
+@click.argument("agent_slug")
+@click.option("--task", default=None, help="Override the agent's default task.")
+@click.option("--dry-run", is_flag=True, default=False, help="Plan only — no real tool calls.")
+def run_cmd(agent_slug: str, task: str, dry_run: bool):
+    """Run an agent with its configured tools."""
+    _load_dotenv()
+    from hermes.runtime.executor import run_agent
+    result = run_agent(agent_slug, task=task, dry_run=dry_run, base_dir=Path.cwd())
+    if result.status == "error":
+        click.echo(f"\n[ERROR] {result.error}", err=True)
+        sys.exit(1)
+
+
+@cli.group("tools")
+def tools_group():
+    """Manage tool credentials and configuration."""
+
+
+@tools_group.command("status")
+def tools_status_cmd():
+    """Show configuration status for all tool integrations."""
+    _load_dotenv()
+    from hermes.tools.loader import tools_status
+    status = tools_status()
+    click.echo()
+    for service, info in status.items():
+        icon = "✓" if info["ready"] else "✗"
+        click.echo(f"  [{icon}] {service:<10} {info['detail']}")
+    click.echo()
+
+
+@tools_group.command("auth")
+@click.argument("service", type=click.Choice(["gmail"]))
+def tools_auth(service: str):
+    """Authenticate a tool integration (currently: gmail)."""
+    _load_dotenv()
+    if service == "gmail":
+        _auth_gmail()
+
+
+def _auth_gmail():
+    """Run the Gmail OAuth2 flow and save token to ~/.hermes/gmail_token.json."""
+    import os
+    from pathlib import Path as P
+
+    secret_path = P(os.environ.get(
+        "GMAIL_CLIENT_SECRET_PATH",
+        str(P.home() / ".hermes" / "gmail_client_secret.json"),
+    ))
+    token_path = P(os.environ.get(
+        "GMAIL_TOKEN_PATH",
+        str(P.home() / ".hermes" / "gmail_token.json"),
+    ))
+
+    if not secret_path.exists():
+        click.echo(
+            f"\n[ERROR] Client secret not found: {secret_path}\n"
+            "  1. Go to console.cloud.google.com → APIs & Services → Credentials\n"
+            "  2. Create an OAuth 2.0 Client ID (Desktop app)\n"
+            "  3. Download JSON and save it to that path\n",
+            err=True,
+        )
+        sys.exit(1)
+
+    try:
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+        flow = InstalledAppFlow.from_client_secrets_file(str(secret_path), SCOPES)
+        click.echo("\n  Opening browser for Gmail authorization...")
+        creds = flow.run_local_server(port=0)
+        token_path.parent.mkdir(parents=True, exist_ok=True)
+        token_path.write_text(creds.to_json())
+        click.echo(f"  Token saved → {token_path}\n")
+    except ImportError:
+        click.echo("[ERROR] google-auth-oauthlib not installed. Run: pip install google-auth-oauthlib", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"[ERROR] Auth failed: {e}", err=True)
+        sys.exit(1)
 
 
 @cli.command("serve")
