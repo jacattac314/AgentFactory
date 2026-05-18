@@ -83,20 +83,41 @@ def tools_status() -> Dict[str, Dict[str, Any]]:
     """Return the configuration status for all supported services."""
     from pathlib import Path as P
 
-    slack_token = os.environ.get("SLACK_BOT_TOKEN", "")
-    gmail_secret = P(os.environ.get("GMAIL_CLIENT_SECRET_PATH",
-                     str(P.home() / ".hermes" / "gmail_client_secret.json")))
-    gmail_token  = P(os.environ.get("GMAIL_TOKEN_PATH",
-                     str(P.home() / ".hermes" / "gmail_token.json")))
-    serper_key   = os.environ.get("SERPER_API_KEY", "")
-    anthropic_key= os.environ.get("ANTHROPIC_API_KEY", "")
+    slack_token   = os.environ.get("SLACK_BOT_TOKEN", "")
+    gmail_secret  = P(os.environ.get("GMAIL_CLIENT_SECRET_PATH",
+                      str(P.home() / ".hermes" / "gmail_client_secret.json")))
+    gmail_token   = P(os.environ.get("GMAIL_TOKEN_PATH",
+                      str(P.home() / ".hermes" / "gmail_token.json")))
+    serper_key    = os.environ.get("SERPER_API_KEY", "")
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_base      = os.environ.get("HERMES_API_BASE", "")
+    hermes_model  = os.environ.get("HERMES_MODEL", "")
+    hermes_backend= os.environ.get("HERMES_BACKEND", "")
+
+    use_openai = (hermes_backend == "openai") or (not hermes_backend and bool(api_base))
+    if use_openai:
+        base   = api_base or "http://localhost:1234/v1"
+        model  = hermes_model or "llama3.2"
+        llm_ready  = True
+        llm_detail = f"OpenAI-compat → {base}  model={model}"
+    elif anthropic_key:
+        llm_ready  = True
+        llm_detail = f"Anthropic Claude  model={hermes_model or 'claude-sonnet-4-6'}"
+    else:
+        llm_ready  = False
+        llm_detail = (
+            "Not configured — set HERMES_API_BASE (LM Studio) or ANTHROPIC_API_KEY"
+        )
 
     return {
+        "llm": {
+            "ready":  llm_ready,
+            "detail": llm_detail,
+        },
         "slack": {
             "ready":  bool(slack_token),
             "detail": "SLACK_BOT_TOKEN set" if slack_token else
-                      "Set SLACK_BOT_TOKEN=xoxb-... in .env\n"
-                      "  Get one: https://api.slack.com/apps → OAuth & Permissions",
+                      "Set SLACK_BOT_TOKEN=xoxb-... in .env",
         },
         "gmail": {
             "ready":  gmail_secret.exists() and gmail_token.exists(),
@@ -105,13 +126,8 @@ def tools_status() -> Dict[str, Dict[str, Any]]:
         },
         "web": {
             "ready":  True,
-            "detail": f"DuckDuckGo (no key needed)"
-                      + (f" + Serper (key set)" if serper_key else
+            "detail": "DuckDuckGo (no key needed)"
+                      + (" + Serper (key set)" if serper_key else
                          " — set SERPER_API_KEY for Google results"),
-        },
-        "claude": {
-            "ready":  bool(anthropic_key),
-            "detail": "ANTHROPIC_API_KEY set" if anthropic_key else
-                      "Set ANTHROPIC_API_KEY=sk-ant-... in .env — required for real execution",
         },
     }
