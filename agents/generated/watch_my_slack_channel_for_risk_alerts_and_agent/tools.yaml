@@ -1,0 +1,78 @@
+allowed_tools:
+
+
+  slack:
+
+    - post_message
+
+    - read_channel
+
+
+
+
+denied_tools:
+
+
+  slack:
+
+    - delete_message
+
+    - invite_users
+
+    - create_channel
+
+
+  shell:
+
+    - execute
+
+    - run_command
+
+    - eval
+
+
+  filesystem:
+
+    - delete
+
+    - write_sensitive
+
+    - unlink
+
+    - rmtree
+
+
+  package_manager:
+
+    - install
+
+    - uninstall
+
+    - upgrade
+
+
+  cloud:
+
+    - deploy
+
+    - provision
+
+    - destroy
+
+
+
+
+approval_required_for:
+
+  - sending_email
+
+  - deleting_files
+
+  - modifying_code
+
+  - installing_packages
+
+  - cloud_deployment
+
+  - posting_to_external_services
+

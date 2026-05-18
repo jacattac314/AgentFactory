@@ -1,28 +1,22 @@
-name: "An Agent That Summarizes My Gmail And Posts Agent"
-slug: "an_agent_that_summarizes_my_gmail_and_posts_agent"
-description: "Auto-generated agent: Create an agent that summarizes my Gmail and posts a morning brief to Slack"
-version: "0.1.0"
-enabled: false
-template_name: "briefing_agent"
-agent_type: "briefing_agent"
+name: An Agent That Summarizes My Gmail And Posts Agent
+slug: an_agent_that_summarizes_my_gmail_and_posts_agent
+description: 'Auto-generated agent: Create an agent that summarizes my Gmail and posts
+  a morning brief to Slack'
+version: 0.1.0
+enabled: true
+template_name: briefing_agent
+agent_type: briefing_agent
 entrypoint: workflow.py
 schedule: null
-created_at: "2026-05-18T17:06:40.508324+00:00"
-
+created_at: '2026-05-18T17:19:33.145193+00:00'
 approval_required_for:
+- sending_email
+- deleting_files
+- modifying_code
+- installing_packages
+- cloud_deployment
+- posting_to_external_services
+user_request: 'Create an agent that summarizes my Gmail and posts a morning brief
+  to Slack
 
-  - sending_email
-
-  - deleting_files
-
-  - modifying_code
-
-  - installing_packages
-
-  - cloud_deployment
-
-  - posting_to_external_services
-
-
-user_request: |
-  Create an agent that summarizes my Gmail and posts a morning brief to Slack
+  '

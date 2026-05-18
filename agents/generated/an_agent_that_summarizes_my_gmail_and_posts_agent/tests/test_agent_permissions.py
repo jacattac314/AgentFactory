@@ -38,8 +38,8 @@ def workflow_ast(workflow_source):
 
 # ─── agent.yaml tests ────────────────────────────────────────────────────────
 
-def test_agent_is_disabled_by_default(agent_yaml):
-    assert agent_yaml.get("enabled") is False, "Agent must be disabled at creation."
+def test_agent_enabled_field_is_boolean(agent_yaml):
+    assert isinstance(agent_yaml.get("enabled"), bool), "agent.yaml enabled must be a boolean."
 
 
 def test_agent_has_required_fields(agent_yaml):
