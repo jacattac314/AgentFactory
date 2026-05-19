@@ -1,0 +1,28 @@
+allowed_tools:
+{% if allowed_tools %}
+{% for service, ops in allowed_tools.items() %}
+  {{ service }}:
+{% for op in ops %}
+    - {{ op }}
+{% endfor %}
+{% endfor %}
+{% else %}
+  {}
+{% endif %}
+
+denied_tools:
+{% if denied_tools %}
+{% for service, ops in denied_tools.items() %}
+  {{ service }}:
+{% for op in ops %}
+    - {{ op }}
+{% endfor %}
+{% endfor %}
+{% else %}
+  {}
+{% endif %}
+
+approval_required_for:
+{% for gate in approval_required_for %}
+  - {{ gate }}
+{% endfor %}
