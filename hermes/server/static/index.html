@@ -1,1224 +1,828 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hermes Agent Factory</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AetherOS — Agent Factory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Hanken+Grotesk:wght@600;800&family=JetBrains+Mono:wght@400;500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    user-select: none;
+  }
+  .fill-icon { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+  .glass-panel {
+    background: rgba(22, 27, 34, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .terminal-inset {
+    background: #0c0e14;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  body { background-color: #0F1117; color: #e2e2eb; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
-    :root {
-      --bg: #0d0d14;
-      --surface: #16161f;
-      --surface2: #1e1e2a;
-      --border: #2a2a3c;
-      --accent: #7c6af7;
-      --accent-dim: #4c3f9a;
-      --green: #22c55e;
-      --red: #ef4444;
-      --yellow: #f59e0b;
-      --text: #e2e8f0;
-      --muted: #64748b;
-      --font: system-ui, -apple-system, sans-serif;
-      --mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-    }
+  /* Toggle switch */
+  .toggle { position: relative; display: inline-block; width: 32px; height: 18px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: rgba(255,255,255,0.1); border-radius: 9px;
+    transition: 0.2s;
+  }
+  .toggle-slider:before {
+    content: ""; position: absolute;
+    height: 12px; width: 12px; left: 3px; bottom: 3px;
+    background: rgba(255,255,255,0.4); border-radius: 50%;
+    transition: 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: #4edea3; }
+  .toggle input:checked + .toggle-slider:before {
+    transform: translateX(14px);
+    background: #003824;
+  }
 
-    html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); }
+  /* Pulse animation for status dot */
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .pulse { animation: pulse-dot 2s ease-in-out infinite; }
 
-    /* ── Top bar ── */
-    .topbar {
-      height: 48px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 16px;
-      flex-shrink: 0;
-      z-index: 10;
-    }
-    .topbar-brand {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--accent);
-      text-transform: uppercase;
-    }
-    .topbar-model {
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .topbar-model .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--green);
-    }
-    .topbar-model .dot.offline { background: var(--red); }
-    .topbar-tools {
-      margin-left: auto;
-      display: flex;
-      gap: 8px;
-    }
-    .tool-chip {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      text-transform: uppercase;
-      letter-spacing: .3px;
-    }
-    .tool-chip.ready { background: #0d2d1a; color: var(--green); border: 1px solid #14532d; }
-    .tool-chip.not-ready { background: #2d1a1a; color: var(--muted); border: 1px solid #3d2020; }
+  /* SSE log line colors */
+  .log-header { color: #c0c1ff; }
+  .log-llm { color: #e2e2eb; }
+  .log-tool-call { color: #ffb95f; }
+  .log-tool-result { color: #4edea3; }
+  .log-done { color: #4edea3; font-weight: 500; }
+  .log-error { color: #ffb4ab; }
 
-    /* ── App body ── */
-    .app-body {
-      display: flex;
-      height: calc(100vh - 48px);
-      overflow: hidden;
-    }
+  /* Skeleton shimmer */
+  @keyframes shimmer {
+    0% { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 400px 100%;
+    animation: shimmer 1.6s infinite;
+  }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      width: 280px;
-      flex-shrink: 0;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .sidebar-header {
-      padding: 16px 14px 10px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .sidebar-title {
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .6px;
-      color: var(--muted);
-    }
-    .btn-new {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--accent);
-      background: transparent;
-      border: 1px solid var(--accent-dim);
-      border-radius: 6px;
-      padding: 4px 10px;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    .btn-new:hover { background: var(--accent-dim); color: #fff; }
+  /* Modal backdrop */
+  #modal-backdrop { transition: opacity 0.2s; }
+  #modal-backdrop.hidden { display: none; }
 
-    .agent-list { flex: 1; overflow-y: auto; padding: 8px 6px; }
-
-    .agent-item {
-      padding: 10px 10px;
-      border-radius: 7px;
-      cursor: pointer;
-      margin-bottom: 2px;
-      border: 1px solid transparent;
-      transition: background .12s, border-color .12s;
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
+  /* Agent card hover */
+  .agent-card { transition: background 0.15s; }
+  .agent-card:hover { background: rgba(255,255,255,0.04); }
+  .agent-card.active { background: rgba(78,222,163,0.06); border-right: 2px solid #4edea3; }
+</style>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "primary-fixed": "#6ffbbe",
+        "on-tertiary-container": "#523200",
+        "inverse-on-surface": "#2e3037",
+        "on-primary-fixed": "#002113",
+        "surface-dim": "#111319",
+        "tertiary-fixed": "#ffddb8",
+        "primary-fixed-dim": "#4edea3",
+        "on-surface": "#e2e2eb",
+        "surface": "#111319",
+        "inverse-surface": "#e2e2eb",
+        "on-tertiary": "#472a00",
+        "surface-variant": "#33343b",
+        "primary-container": "#10b981",
+        "error": "#ffb4ab",
+        "surface-container-lowest": "#0c0e14",
+        "surface-container-highest": "#33343b",
+        "outline": "#86948a",
+        "on-secondary-fixed": "#07006c",
+        "secondary-fixed-dim": "#c0c1ff",
+        "on-primary-container": "#00422b",
+        "secondary-container": "#3131c0",
+        "surface-bright": "#373940",
+        "outline-variant": "#3c4a42",
+        "on-surface-variant": "#bbcabf",
+        "background": "#111319",
+        "on-secondary": "#1000a9",
+        "on-primary": "#003824",
+        "inverse-primary": "#006c49",
+        "primary": "#4edea3",
+        "surface-container-high": "#282a30",
+        "error-container": "#93000a",
+        "on-secondary-container": "#b0b2ff",
+        "on-error-container": "#ffdad6",
+        "secondary": "#c0c1ff",
+        "tertiary": "#ffb95f",
+        "on-background": "#e2e2eb",
+        "surface-container-low": "#191b22",
+        "secondary-fixed": "#e1e0ff",
+        "surface-container": "#1e1f26",
+        "on-error": "#690005",
+        "tertiary-container": "#e29100",
+        "surface-tint": "#4edea3"
+      },
+      borderRadius: {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      fontFamily: {
+        "mono": ["JetBrains Mono", "monospace"],
+        "sans": ["Inter", "sans-serif"],
+        "display": ["Hanken Grotesk", "sans-serif"]
+      }
     }
-    .agent-item:hover { background: var(--surface2); }
-    .agent-item.active { background: var(--surface2); border-color: var(--accent); }
-
-    .status-dot {
-      width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
-    }
-    .status-dot.enabled  { background: var(--green); }
-    .status-dot.disabled { background: var(--yellow); }
-    .status-dot.error    { background: var(--red); }
-
-    .agent-item-content { flex: 1; min-width: 0; }
-    .agent-item-name {
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text);
-      line-height: 1.3;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .agent-item-template {
-      font-size: 10px;
-      color: var(--muted);
-    }
-
-    /* ── Main panel ── */
-    .main-panel {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: var(--bg);
-    }
-
-    .main-toolbar {
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-      min-height: 44px;
-    }
-    .main-toolbar-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      flex: 1;
-    }
-    .btn-clear {
-      font-size: 11px;
-      color: var(--muted);
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 4px 10px;
-      cursor: pointer;
-    }
-    .btn-clear:hover { border-color: var(--muted); color: var(--text); }
-
-    .main-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-    }
-
-    /* Empty state */
-    .empty-state {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      color: var(--muted);
-    }
-    .empty-state-icon { font-size: 52px; opacity: .3; }
-    .empty-state h3 { font-size: 17px; font-weight: 600; color: var(--text); }
-    .empty-state p { font-size: 13px; max-width: 300px; text-align: center; line-height: 1.6; }
-
-    /* Run log events */
-    .log-events { display: flex; flex-direction: column; gap: 8px; }
-
-    .log-event { border-radius: 8px; padding: 10px 14px; font-size: 12.5px; line-height: 1.5; }
-    .log-event-header {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-    }
-    .log-event-header .ev-row { display: flex; gap: 10px; margin-bottom: 2px; }
-    .log-event-header .ev-label { color: var(--accent); min-width: 50px; }
-
-    .log-event-llm {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      display: flex;
-      gap: 10px;
-    }
-    .log-event-llm .llm-icon { font-size: 16px; flex-shrink: 0; }
-    .log-event-llm .llm-text { white-space: pre-wrap; word-break: break-word; }
-
-    .log-event-tool-call {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #2d1f6e;
-      border: 1px solid var(--accent-dim);
-      color: #c4b5fd;
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 6px 12px;
-      border-radius: 20px;
-      align-self: flex-start;
-    }
-    .log-event-tool-call .tool-icon { color: var(--accent); }
-
-    .log-event-tool-result {
-      background: transparent;
-      border-left: 3px solid var(--border);
-      border-radius: 0;
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 6px 12px;
-      margin-left: 8px;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .log-event-done {
-      background: #0d2d1a;
-      border: 1px solid #14532d;
-      color: var(--green);
-    }
-    .log-event-done .done-label { font-weight: 700; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
-    .log-event-done .done-output { color: var(--text); white-space: pre-wrap; word-break: break-word; font-size: 12.5px; }
-
-    .log-event-error {
-      background: #2d1010;
-      border: 1px solid #7f1d1d;
-      color: var(--red);
-    }
-
-    /* Runs history */
-    .runs-list { display: flex; flex-direction: column; gap: 8px; }
-
-    .run-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .run-card-header {
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .run-card-header:hover { background: rgba(255,255,255,.03); }
-    .run-ts { font-size: 11px; color: var(--muted); font-family: var(--mono); }
-    .run-status-badge {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 20px;
-      text-transform: uppercase;
-      letter-spacing: .3px;
-    }
-    .run-status-completed { background: #0d2d1a; color: var(--green); }
-    .run-status-error     { background: #2d1010; color: var(--red); }
-    .run-status-dry_run   { background: #1a1a3a; color: #818cf8; }
-    .run-tool-count { font-size: 11px; color: var(--muted); margin-left: auto; }
-    .run-expand { font-size: 11px; color: var(--muted); }
-
-    .run-card-body {
-      padding: 0 14px 14px;
-      display: none;
-    }
-    .run-card-body.open { display: block; }
-    .run-card-body pre {
-      background: var(--bg);
-      border-radius: 6px;
-      padding: 10px;
-      font-size: 11px;
-      font-family: var(--mono);
-      color: var(--text);
-      white-space: pre-wrap;
-      word-break: break-word;
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .run-output-preview {
-      font-size: 12px;
-      color: var(--muted);
-      font-style: italic;
-      margin-bottom: 8px;
-    }
-
-    /* ── Inspector ── */
-    .inspector {
-      width: 320px;
-      flex-shrink: 0;
-      background: var(--surface);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .inspector-header {
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .6px;
-      color: var(--muted);
-    }
-    .inspector-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .inspector-empty {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .insp-section { display: flex; flex-direction: column; gap: 6px; }
-    .insp-label {
-      font-size: 10px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      color: var(--muted);
-    }
-    .insp-name {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--text);
-      line-height: 1.3;
-    }
-    .insp-desc {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-    }
-
-    .badge-template {
-      display: inline-block;
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-      background: #2d2763;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: .4px;
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 10px;
-      border-radius: 20px;
-    }
-    .status-badge.enabled  { background: #0d2d1a; color: var(--green); }
-    .status-badge.disabled { background: #2d2510; color: var(--yellow); }
-
-    .chips-row { display: flex; flex-wrap: wrap; gap: 5px; }
-    .chip {
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-    }
-    .chip-green { background: #0d2d1a; color: var(--green); border: 1px solid #14532d; }
-    .chip-red   { background: #2d1010; color: #fca5a5; border: 1px solid #7f1d1d; }
-    .chip-gray  { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-
-    .insp-divider {
-      height: 1px;
-      background: var(--border);
-    }
-
-    .insp-toggle-btn {
-      font-size: 10px;
-      color: var(--muted);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      text-decoration: underline;
-    }
-    .insp-toggle-btn:hover { color: var(--text); }
-
-    /* Task input */
-    .task-input {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 12px;
-      padding: 8px 10px;
-      outline: none;
-      resize: vertical;
-      min-height: 56px;
-    }
-    .task-input:focus { border-color: var(--accent); }
-    .task-input::placeholder { color: var(--muted); }
-
-    .btn-row { display: flex; gap: 8px; }
-    .btn {
-      flex: 1;
-      padding: 8px 10px;
-      border-radius: 7px;
-      border: none;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity .15s;
-    }
-    .btn:hover { opacity: .85; }
-    .btn:active { opacity: .7; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .toggle-label { font-size: 12px; color: var(--text); }
-    .toggle-switch {
-      position: relative;
-      width: 36px;
-      height: 20px;
-    }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-slider {
-      position: absolute;
-      inset: 0;
-      background: var(--surface2);
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: .2s;
-    }
-    .toggle-slider::before {
-      content: '';
-      position: absolute;
-      height: 14px; width: 14px;
-      left: 2px; top: 2px;
-      background: var(--muted);
-      border-radius: 50%;
-      transition: .2s;
-    }
-    .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
-    .toggle-switch input:checked + .toggle-slider::before {
-      transform: translateX(16px);
-      background: #fff;
-    }
-
-    /* Past runs in inspector */
-    .insp-runs { display: flex; flex-direction: column; gap: 5px; }
-    .insp-run-item {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      cursor: pointer;
-    }
-    .insp-run-item:hover { border-color: var(--accent-dim); }
-    .insp-run-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
-    .insp-run-preview { font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* ── Modal ── */
-    .modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.65);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-overlay.hidden { display: none; }
-
-    .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      width: 540px;
-      max-width: 95vw;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .modal-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text);
-    }
-    .modal-subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: -8px;
-    }
-    .modal textarea {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text);
-      font-family: var(--font);
-      font-size: 13px;
-      padding: 12px;
-      outline: none;
-      resize: vertical;
-      min-height: 80px;
-    }
-    .modal textarea:focus { border-color: var(--accent); }
-    .modal textarea::placeholder { color: var(--muted); }
-
-    .spec-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      font-size: 12.5px;
-    }
-    .spec-card-name { font-size: 15px; font-weight: 700; color: var(--text); }
-    .spec-card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
-    .spec-field { display: flex; flex-direction: column; gap: 4px; }
-    .spec-field-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-    .btn-modal {
-      padding: 9px 18px;
-      border-radius: 8px;
-      border: none;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity .15s;
-    }
-    .btn-modal:hover { opacity: .85; }
-    .btn-modal.primary { background: var(--accent); color: #fff; }
-    .btn-modal.secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-modal:disabled { opacity: .4; cursor: not-allowed; }
-
-    .spinner {
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* scrollbar */
-    ::-webkit-scrollbar { width: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-  </style>
+  }
+}
+</script>
 </head>
-<body>
+<body class="font-sans text-sm overflow-hidden h-screen flex flex-col">
 
-<!-- Top bar -->
-<div class="topbar">
-  <div class="topbar-brand">Hermes</div>
-  <div class="topbar-model">
-    <div class="dot" id="llmDot"></div>
-    <span id="llmLabel">loading...</span>
+<!-- ═══════════════════════════════════════════════════
+     TOPBAR
+════════════════════════════════════════════════════ -->
+<header class="h-12 flex-shrink-0 flex items-center justify-between px-4 border-b border-white/5 bg-surface-container-low z-20">
+  <div class="flex items-center gap-3">
+    <span class="font-display font-bold text-lg text-primary tracking-tight">AetherOS</span>
+    <span class="text-on-surface-variant/40 text-xs">|</span>
+    <span class="font-mono text-xs text-on-surface-variant">Agent Factory</span>
   </div>
-  <div class="topbar-tools" id="topbarTools"></div>
-</div>
-
-<!-- App body -->
-<div class="app-body">
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <span class="sidebar-title">Agents</span>
-      <button class="btn-new" id="btnNewAgent">+ New Agent</button>
+  <div class="flex items-center gap-3">
+    <!-- LLM status badge -->
+    <div id="llm-status-badge" class="flex items-center gap-1.5 px-2 py-1 rounded terminal-inset">
+      <span id="llm-dot" class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+      <span id="llm-status-text" class="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Checking…</span>
     </div>
-    <div class="agent-list" id="agentList">
-      <div style="padding:12px;color:var(--muted);font-size:12px;">Loading...</div>
+    <!-- Tool indicators -->
+    <div id="tool-indicators" class="flex items-center gap-1"></div>
+    <!-- System stats -->
+    <button onclick="openModal()" class="flex items-center gap-1 px-2 py-1 rounded border border-white/10 hover:border-primary/40 hover:text-primary transition-colors text-on-surface-variant">
+      <span class="material-symbols-outlined text-[16px]">add</span>
+      <span class="font-mono text-[10px] uppercase tracking-wider">New Agent</span>
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN LAYOUT  (sidebar | center | inspector)
+════════════════════════════════════════════════════ -->
+<div class="flex flex-1 min-h-0">
+
+  <!-- LEFT SIDEBAR: Agent Registry -->
+  <aside class="w-64 flex-shrink-0 flex flex-col border-r border-white/5 bg-surface-container-low">
+    <div class="px-3 py-2 border-b border-white/5">
+      <div class="relative">
+        <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant">search</span>
+        <input id="agent-filter" type="text" placeholder="Filter agents…"
+          class="w-full bg-surface-container-lowest border border-white/5 rounded pl-7 pr-2 py-1.5 font-mono text-xs text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/40"/>
+      </div>
+    </div>
+
+    <div class="px-3 py-1.5 flex items-center justify-between">
+      <span class="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Registry</span>
+      <span id="agent-count" class="font-mono text-[10px] text-on-surface-variant/50">0 agents</span>
+    </div>
+
+    <div id="agent-list" class="flex-1 overflow-y-auto px-1">
+      <!-- agent cards injected here -->
+      <div class="px-3 py-8 text-center text-on-surface-variant/40 font-mono text-xs">Loading…</div>
+    </div>
+
+    <div class="p-2 border-t border-white/5">
+      <button onclick="openModal()" class="w-full flex items-center justify-center gap-1.5 py-2 rounded border border-white/10 hover:border-primary/40 hover:text-primary transition-colors text-on-surface-variant font-mono text-xs">
+        <span class="material-symbols-outlined text-[16px]">add</span>
+        Create Agent
+      </button>
     </div>
   </aside>
 
-  <!-- Main panel -->
-  <main class="main-panel">
-    <div class="main-toolbar">
-      <div class="main-toolbar-title" id="mainTitle">Select an agent</div>
-      <button class="btn-clear" id="btnClear" style="display:none">Clear</button>
+  <!-- CENTER: terminal + runs -->
+  <main class="flex-1 flex flex-col min-w-0 bg-background">
+    <!-- Agent Genesis (empty state) -->
+    <div id="empty-state" class="flex-1 flex flex-col items-center justify-center p-8 gap-6">
+      <div class="text-center space-y-2">
+        <div class="font-display text-2xl font-semibold text-on-surface">Agent Genesis</div>
+        <div class="text-on-surface-variant text-sm max-w-sm">Select an agent from the registry or create a new one from a natural language intent.</div>
+      </div>
+      <div class="flex gap-2 flex-wrap justify-center">
+        <button class="suggestion-chip px-3 py-1.5 rounded-full border border-white/10 font-mono text-xs text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors">Monitor GitHub → Slack</button>
+        <button class="suggestion-chip px-3 py-1.5 rounded-full border border-white/10 font-mono text-xs text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors">Daily digest email</button>
+        <button class="suggestion-chip px-3 py-1.5 rounded-full border border-white/10 font-mono text-xs text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors">Web research agent</button>
+        <button class="suggestion-chip px-3 py-1.5 rounded-full border border-white/10 font-mono text-xs text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors">Data pipeline watcher</button>
+      </div>
     </div>
-    <div class="main-content" id="mainContent">
-      <div class="empty-state">
-        <div class="empty-state-icon">&#128640;</div>
-        <h3>Hermes Agent Factory</h3>
-        <p>Select an agent from the sidebar to view runs and details, or create a new one.</p>
+
+    <!-- Agent workspace (hidden until agent selected) -->
+    <div id="agent-workspace" class="flex-1 flex flex-col min-h-0 hidden">
+      <!-- Workspace header -->
+      <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/5 bg-surface-container-low/50">
+        <div class="flex items-center gap-2">
+          <span id="ws-status-dot" class="w-2 h-2 rounded-full bg-outline"></span>
+          <span id="ws-agent-name" class="font-display font-semibold text-on-surface"></span>
+          <span id="ws-agent-template" class="font-mono text-[10px] text-on-surface-variant bg-white/5 px-1.5 py-0.5 rounded"></span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-on-surface-variant font-mono">
+          <span id="ws-run-count">0 runs</span>
+        </div>
+      </div>
+
+      <!-- Terminal log panel -->
+      <div class="flex-1 min-h-0 flex flex-col">
+        <div class="flex items-center justify-between px-4 py-2 border-b border-white/5">
+          <span class="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Live Log</span>
+          <button id="clear-log-btn" onclick="clearLog()" class="font-mono text-[10px] text-on-surface-variant/50 hover:text-on-surface-variant transition-colors">Clear</button>
+        </div>
+        <div id="terminal-log" class="flex-1 overflow-y-auto terminal-inset mx-4 my-2 rounded-lg p-3 font-mono text-xs leading-relaxed">
+          <div class="text-on-surface-variant/30">Awaiting run…</div>
+        </div>
+      </div>
+
+      <!-- Runs history -->
+      <div class="border-t border-white/5">
+        <div class="flex items-center justify-between px-4 py-2">
+          <span class="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Run History</span>
+          <button onclick="loadRuns()" class="font-mono text-[10px] text-on-surface-variant/50 hover:text-on-surface-variant transition-colors">Refresh</button>
+        </div>
+        <div id="runs-list" class="max-h-40 overflow-y-auto px-4 pb-2 space-y-1">
+          <div class="text-on-surface-variant/30 font-mono text-xs">No runs yet.</div>
+        </div>
       </div>
     </div>
   </main>
 
-  <!-- Inspector -->
-  <aside class="inspector">
-    <div class="inspector-header">Inspector</div>
-    <div id="inspectorBody" class="inspector-empty">
-      <span>Nothing selected</span>
+  <!-- RIGHT INSPECTOR -->
+  <aside id="inspector" class="w-72 flex-shrink-0 border-l border-white/5 bg-surface-container-low flex flex-col hidden">
+    <div class="px-4 py-3 border-b border-white/5">
+      <div class="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider mb-0.5">Inspector</div>
+      <div id="insp-name" class="font-display font-semibold text-on-surface text-base"></div>
+      <div id="insp-slug" class="font-mono text-[10px] text-on-surface-variant/60"></div>
+    </div>
+
+    <!-- Meta table -->
+    <div class="px-4 py-3 border-b border-white/5 space-y-2">
+      <div class="grid grid-cols-2 gap-1.5 text-xs">
+        <div class="text-on-surface-variant/60 font-mono uppercase text-[10px]">Template</div>
+        <div id="insp-template" class="font-mono text-secondary text-[11px] truncate"></div>
+        <div class="text-on-surface-variant/60 font-mono uppercase text-[10px]">Version</div>
+        <div id="insp-version" class="font-mono text-on-surface-variant text-[11px]"></div>
+        <div class="text-on-surface-variant/60 font-mono uppercase text-[10px]">Status</div>
+        <div id="insp-status" class="font-mono text-[11px]"></div>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="px-4 py-3 border-b border-white/5">
+      <div class="font-mono text-[10px] text-on-surface-variant/60 uppercase mb-1.5">Description</div>
+      <p id="insp-desc" class="text-on-surface-variant text-xs leading-relaxed"></p>
+    </div>
+
+    <!-- Tools -->
+    <div class="px-4 py-3 border-b border-white/5">
+      <div class="font-mono text-[10px] text-on-surface-variant/60 uppercase mb-2">Allowed Tools</div>
+      <div id="insp-allowed" class="flex flex-wrap gap-1 mb-3"></div>
+      <div class="font-mono text-[10px] text-on-surface-variant/60 uppercase mb-2">Denied Tools</div>
+      <div id="insp-denied" class="flex flex-wrap gap-1"></div>
+    </div>
+
+    <!-- Run controls -->
+    <div class="px-4 py-3 border-b border-white/5 space-y-2">
+      <div class="font-mono text-[10px] text-on-surface-variant/60 uppercase mb-1.5">Run Command</div>
+      <input id="run-task-input" type="text" placeholder="Override task (optional)"
+        class="w-full bg-surface-container-lowest border border-white/5 rounded px-2 py-1.5 font-mono text-xs text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary/40"/>
+      <div class="flex gap-2">
+        <button id="dry-run-btn" onclick="runAgent(true)"
+          class="flex-1 py-1.5 border border-white/10 rounded font-mono text-[10px] uppercase tracking-wider text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors">
+          Dry Run
+        </button>
+        <button id="run-btn" onclick="runAgent(false)"
+          class="flex-1 py-1.5 bg-primary text-on-primary rounded font-mono text-[10px] uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all">
+          Run Now
+        </button>
+      </div>
+    </div>
+
+    <!-- Enable/Disable -->
+    <div class="px-4 py-3 mt-auto">
+      <button id="toggle-enabled-btn" onclick="toggleAgentEnabled()"
+        class="w-full py-2 border border-white/10 rounded font-mono text-[10px] uppercase tracking-wider text-on-surface-variant hover:border-error/40 hover:text-error transition-colors">
+        Disable Agent
+      </button>
     </div>
   </aside>
-
 </div>
 
-<!-- New Agent Modal -->
-<div class="modal-overlay hidden" id="modalOverlay">
-  <div class="modal">
-    <div class="modal-title">Create New Agent</div>
-    <div class="modal-subtitle">Describe what the agent should do and we'll generate the spec.</div>
-    <textarea id="modalRequest" placeholder="e.g. Watch my Slack channel for security alerts and email a daily summary to the team..." rows="3"></textarea>
-    <div id="specPreview" style="display:none"></div>
-    <div class="modal-actions">
-      <button class="btn-modal secondary" id="btnModalCancel">Cancel</button>
-      <button class="btn-modal secondary" id="btnPreview">Preview Spec</button>
-      <button class="btn-modal primary" id="btnCreate" disabled>Create Agent</button>
+<!-- ═══════════════════════════════════════════════════
+     CREATE AGENT MODAL
+════════════════════════════════════════════════════ -->
+<div id="modal-backdrop" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 hidden">
+  <div class="w-full max-w-[640px] glass-panel rounded-xl shadow-2xl flex flex-col overflow-hidden">
+    <!-- Modal Header -->
+    <div class="px-6 py-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+      <h2 class="font-display font-semibold text-xl text-on-surface">Create New Agent</h2>
+      <button onclick="closeModal()" class="text-on-surface-variant hover:text-on-surface transition-colors">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
+      <!-- Intent input -->
+      <div class="space-y-2">
+        <label class="font-mono text-[10px] text-primary uppercase tracking-wider">Agent Intent</label>
+        <div class="relative">
+          <textarea id="agent-intent" rows="5"
+            class="w-full bg-surface-container-lowest border border-white/10 rounded-lg p-4 font-sans text-sm text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container/50 transition-all resize-none"
+            placeholder="Describe your agent's purpose…"></textarea>
+          <div class="absolute bottom-3 right-3 flex items-center gap-1">
+            <span class="material-symbols-outlined fill-icon text-primary text-[16px]">auto_awesome</span>
+            <span class="font-mono text-[9px] text-primary/60 uppercase">AI Processing</span>
+          </div>
+        </div>
+        <button id="preview-btn" onclick="previewSpec()"
+          class="text-xs font-mono text-primary/70 hover:text-primary transition-colors underline underline-offset-2">
+          Preview spec →
+        </button>
+      </div>
+
+      <!-- Spec Preview Card -->
+      <div id="spec-preview" class="space-y-2 hidden">
+        <div class="flex items-center justify-between">
+          <label class="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Spec Preview</label>
+          <span class="font-mono text-[10px] text-primary-fixed bg-primary-fixed/10 px-2 py-0.5 rounded">Live Generation</span>
+        </div>
+        <div class="terminal-inset p-5 rounded-lg border border-white/5 grid grid-cols-2 gap-y-5 gap-x-4 relative overflow-hidden">
+          <div class="absolute -right-12 -top-12 w-32 h-32 bg-primary/5 blur-3xl rounded-full"></div>
+          <div class="space-y-1">
+            <p class="font-mono text-[10px] text-on-surface-variant/50 uppercase">Agent Name</p>
+            <div id="prev-name" class="font-sans text-sm text-on-surface flex items-center gap-1">
+              <span class="material-symbols-outlined text-primary-fixed text-[16px]">label</span>
+              <span>—</span>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <p class="font-mono text-[10px] text-on-surface-variant/50 uppercase">Architecture</p>
+            <div id="prev-template" class="font-sans text-sm text-on-surface flex items-center gap-1">
+              <span class="material-symbols-outlined text-secondary text-[16px]">account_tree</span>
+              <span>—</span>
+            </div>
+          </div>
+          <div class="space-y-1 col-span-2">
+            <p class="font-mono text-[10px] text-on-surface-variant/50 uppercase">Description</p>
+            <p id="prev-desc" class="font-sans text-xs text-on-surface-variant leading-relaxed">—</p>
+          </div>
+          <div class="space-y-1 col-span-2">
+            <p class="font-mono text-[10px] text-on-surface-variant/50 uppercase">Connected Tools</p>
+            <div id="prev-tools" class="flex flex-wrap gap-1.5"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div id="modal-error" class="hidden p-3 rounded bg-error-container/20 border border-error/20 font-mono text-xs text-error"></div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="px-6 py-4 border-t border-white/5 bg-surface-container-low flex justify-end items-center gap-4">
+      <button onclick="closeModal()" class="px-4 py-2 font-mono text-xs text-on-surface-variant hover:text-on-surface transition-all">
+        Cancel
+      </button>
+      <button id="create-btn" onclick="createAgent()"
+        class="px-6 py-2 bg-primary text-on-primary font-mono text-xs rounded-lg shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2">
+        Generate Agent
+        <span class="material-symbols-outlined text-[16px]">bolt</span>
+      </button>
     </div>
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
 <script>
-// ─── State ────────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────
 let agents = [];
 let selectedSlug = null;
-let isRunning = false;
-let currentEventSource = null;
-let deniedExpanded = false;
-let previewedSpec = null;
+let sseSource = null;
+let previewData = null;
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
-async function boot() {
-  await Promise.all([fetchStatus(), fetchAgents()]);
-}
+// ── Boot ──────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadStatus();
+  loadAgents();
 
-// ─── Status ───────────────────────────────────────────────────────────────────
-async function fetchStatus() {
+  // Suggestion chips → open modal with text prefilled
+  document.querySelectorAll('.suggestion-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('agent-intent').value = btn.textContent.trim();
+      openModal();
+    });
+  });
+
+  // Agent filter
+  document.getElementById('agent-filter').addEventListener('input', renderAgentList);
+});
+
+// ── Status ────────────────────────────────────────────
+async function loadStatus() {
   try {
     const res = await fetch('/api/status');
     const data = await res.json();
-    renderTopbar(data);
-  } catch(e) {
-    document.getElementById('llmLabel').textContent = 'status unavailable';
+
+    const dot = document.getElementById('llm-dot');
+    const txt = document.getElementById('llm-status-text');
+    const llm = data.llm || {};
+
+    if (llm.ok) {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-primary pulse';
+      const model = llm.model || 'LLM';
+      txt.textContent = model.length > 24 ? model.slice(0, 24) + '…' : model;
+      txt.className = 'font-mono text-[10px] text-primary uppercase tracking-wider';
+    } else {
+      dot.className = 'w-1.5 h-1.5 rounded-full bg-error';
+      txt.textContent = 'LLM offline';
+      txt.className = 'font-mono text-[10px] text-error uppercase tracking-wider';
+    }
+
+    // Tool indicators
+    const toolBar = document.getElementById('tool-indicators');
+    toolBar.innerHTML = '';
+    const tools = data.tools || {};
+    const iconMap = { web: 'language', email: 'mail', slack: 'hub', github: 'code' };
+    Object.entries(tools).forEach(([name, ok]) => {
+      const icon = iconMap[name] || 'extension';
+      const el = document.createElement('div');
+      el.title = `${name}: ${ok ? 'available' : 'unavailable'}`;
+      el.className = 'flex items-center gap-0.5 opacity-70';
+      el.innerHTML = `
+        <span class="material-symbols-outlined text-[14px] ${ok ? 'text-on-surface-variant' : 'text-on-surface-variant/30'}">${icon}</span>
+        <span class="material-symbols-outlined fill-icon text-[10px] ${ok ? 'text-primary' : 'text-error/60'}">
+          ${ok ? 'check_circle' : 'cancel'}
+        </span>`;
+      toolBar.appendChild(el);
+    });
+  } catch (e) {
+    document.getElementById('llm-status-text').textContent = 'Error';
   }
 }
 
-function renderTopbar(data) {
-  const llmDot   = document.getElementById('llmDot');
-  const llmLabel = document.getElementById('llmLabel');
-  const toolsEl  = document.getElementById('topbarTools');
-
-  const llm = data.llm || {};
-  llmDot.className = 'dot' + (llm.ready ? '' : ' offline');
-  // Extract model name from detail string for compact display
-  const detail = llm.detail || '';
-  const modelMatch = detail.match(/model=(\S+)/);
-  llmLabel.textContent = modelMatch ? modelMatch[1] : (llm.ready ? 'LLM ready' : 'LLM offline');
-
-  const tools = ['web', 'slack', 'gmail'];
-  toolsEl.innerHTML = tools.map(t => {
-    const s = data[t] || {};
-    const cls = s.ready ? 'ready' : 'not-ready';
-    const icon = s.ready ? '&#10003;' : '&#10007;';
-    return `<span class="tool-chip ${cls}">${icon} ${t}</span>`;
-  }).join('');
-}
-
-// ─── Agents ───────────────────────────────────────────────────────────────────
-async function fetchAgents() {
+// ── Agents ────────────────────────────────────────────
+async function loadAgents() {
   try {
     const res = await fetch('/api/agents');
     const data = await res.json();
     agents = data.agents || [];
-    renderSidebar();
-  } catch(e) {
-    document.getElementById('agentList').innerHTML = '<div style="padding:12px;color:var(--red);font-size:12px;">Failed to load agents.</div>';
+    renderAgentList();
+    document.getElementById('agent-count').textContent = `${agents.length} agent${agents.length !== 1 ? 's' : ''}`;
+  } catch (e) {
+    document.getElementById('agent-list').innerHTML =
+      '<div class="px-3 py-4 font-mono text-xs text-error/60">Failed to load agents.</div>';
   }
 }
 
-function renderSidebar() {
-  const el = document.getElementById('agentList');
-  if (!agents.length) {
-    el.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:12px;line-height:1.6;">No agents yet.<br>Click <strong>+ New Agent</strong> to create one.</div>';
+function renderAgentList() {
+  const filter = document.getElementById('agent-filter').value.toLowerCase();
+  const filtered = agents.filter(a =>
+    a.name.toLowerCase().includes(filter) || a.slug.toLowerCase().includes(filter)
+  );
+
+  const el = document.getElementById('agent-list');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="px-3 py-6 text-center font-mono text-xs text-on-surface-variant/30">No agents found.</div>';
     return;
   }
-  el.innerHTML = agents.map(a => {
-    const dotCls = a.enabled ? 'enabled' : 'disabled';
-    const active = a.slug === selectedSlug ? ' active' : '';
-    return `<div class="agent-item${active}" data-slug="${a.slug}">
-      <div class="status-dot ${dotCls}"></div>
-      <div class="agent-item-content">
-        <div class="agent-item-name">${escHtml(a.name)}</div>
-        <div class="agent-item-template">${escHtml(a.template_name || '')}</div>
-      </div>
-    </div>`;
-  }).join('');
 
-  el.querySelectorAll('.agent-item').forEach(item => {
-    item.addEventListener('click', () => selectAgent(item.dataset.slug));
-  });
+  el.innerHTML = filtered.map(a => `
+    <div class="agent-card px-3 py-2.5 rounded cursor-pointer flex items-center gap-2 ${a.slug === selectedSlug ? 'active' : ''}"
+         onclick="selectAgent('${a.slug}')">
+      <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${a.enabled ? 'bg-primary' : 'bg-outline'}"></span>
+      <div class="flex-1 min-w-0">
+        <div class="font-sans text-xs font-medium text-on-surface truncate">${escHtml(a.name)}</div>
+        <div class="font-mono text-[10px] text-on-surface-variant/50 truncate">${escHtml(a.slug)}</div>
+      </div>
+      <label class="toggle flex-shrink-0" onclick="event.stopPropagation()">
+        <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAgent('${a.slug}', this.checked)"/>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  `).join('');
 }
 
-// ─── Select agent ─────────────────────────────────────────────────────────────
 async function selectAgent(slug) {
-  if (isRunning) stopRun();
   selectedSlug = slug;
-  deniedExpanded = false;
-  renderSidebar();
-  const agent = agents.find(a => a.slug === slug);
-  if (!agent) return;
+  renderAgentList();
 
-  document.getElementById('mainTitle').textContent = agent.name;
-  document.getElementById('btnClear').style.display = '';
+  const a = agents.find(x => x.slug === slug);
+  if (!a) return;
 
-  // Load run history then render main
-  const runs = await fetchRuns(slug);
-  renderMainRuns(runs, agent);
-  renderInspector(agent, runs);
-}
+  // Show workspace
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('agent-workspace').classList.remove('hidden');
+  document.getElementById('inspector').classList.remove('hidden');
 
-async function fetchRuns(slug) {
+  // Workspace header
+  document.getElementById('ws-agent-name').textContent = a.name;
+  document.getElementById('ws-agent-template').textContent = a.template_name || 'custom';
+  const wsDot = document.getElementById('ws-status-dot');
+  wsDot.className = `w-2 h-2 rounded-full ${a.enabled ? 'bg-primary' : 'bg-outline'}`;
+
+  // Inspector
+  document.getElementById('insp-name').textContent = a.name;
+  document.getElementById('insp-slug').textContent = a.slug;
+  document.getElementById('insp-template').textContent = a.template_name || '—';
+  document.getElementById('insp-version').textContent = a.version || '1.0.0';
+  document.getElementById('insp-status').innerHTML = a.enabled
+    ? '<span class="text-primary">● Active</span>'
+    : '<span class="text-outline">● Inactive</span>';
+
+  // Load full meta
   try {
-    const res = await fetch(`/api/agents/${slug}/runs`);
-    const data = await res.json();
-    return data.runs || [];
-  } catch(e) {
-    return [];
-  }
+    const res = await fetch(`/api/agents/${slug}`);
+    const meta = await res.json();
+    document.getElementById('insp-desc').textContent = meta.description || 'No description.';
+
+    const allowed = meta.allowed_tools || {};
+    const denied = meta.denied_tools || {};
+
+    document.getElementById('insp-allowed').innerHTML =
+      Object.keys(allowed).length
+        ? Object.keys(allowed).map(t => toolChip(t, 'allowed')).join('')
+        : '<span class="font-mono text-[10px] text-on-surface-variant/30">None</span>';
+
+    document.getElementById('insp-denied').innerHTML =
+      Object.keys(denied).length
+        ? Object.keys(denied).map(t => toolChip(t, 'denied')).join('')
+        : '<span class="font-mono text-[10px] text-on-surface-variant/30">None</span>';
+  } catch {}
+
+  const toggleBtn = document.getElementById('toggle-enabled-btn');
+  toggleBtn.textContent = a.enabled ? 'Disable Agent' : 'Enable Agent';
+  toggleBtn.className = a.enabled
+    ? 'w-full py-2 border border-white/10 rounded font-mono text-[10px] uppercase tracking-wider text-on-surface-variant hover:border-error/40 hover:text-error transition-colors'
+    : 'w-full py-2 border border-white/10 rounded font-mono text-[10px] uppercase tracking-wider text-on-surface-variant hover:border-primary/40 hover:text-primary transition-colors';
+
+  // Load runs
+  loadRuns();
 }
 
-// ─── Main panel: run history ──────────────────────────────────────────────────
-function renderMainRuns(runs, agent) {
-  const el = document.getElementById('mainContent');
-  if (!runs.length) {
-    el.innerHTML = `<div class="empty-state">
-      <div class="empty-state-icon">&#128203;</div>
-      <h3>No runs yet</h3>
-      <p>Use the Inspector panel to run this agent and see live output here.</p>
-    </div>`;
-    return;
-  }
-
-  const cards = runs.slice(0, 20).map((r, i) => {
-    const ts = r.id ? r.id.replace('.json','') : (r.started_at || '');
-    const stCls = 'run-status-' + (r.status || 'unknown');
-    const stLabel = r.status || 'unknown';
-    const toolCount = Array.isArray(r.tool_calls) ? r.tool_calls.length : 0;
-    const preview = (r.output || '').substring(0, 120) + ((r.output || '').length > 120 ? '...' : '');
-    return `<div class="run-card">
-      <div class="run-card-header" onclick="toggleRunCard(this)">
-        <span class="run-ts">${escHtml(formatTs(ts))}</span>
-        <span class="run-status-badge ${stCls}">${stLabel}</span>
-        <span class="run-tool-count">${toolCount} tool call${toolCount !== 1 ? 's' : ''}</span>
-        <span class="run-expand">&#9660;</span>
-      </div>
-      <div class="run-card-body">
-        <div class="run-output-preview">${escHtml(preview)}</div>
-        <pre>${escHtml(r.output || '(no output)')}</pre>
-      </div>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `<div class="runs-list">${cards}</div>`;
+function toolChip(name, type) {
+  const cls = type === 'allowed'
+    ? 'bg-primary/10 border-primary/20 text-primary'
+    : 'bg-error/10 border-error/20 text-error';
+  return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border font-mono text-[10px] ${cls}">
+    <span class="material-symbols-outlined fill-icon text-[10px]">${type === 'allowed' ? 'check_circle' : 'cancel'}</span>
+    ${escHtml(name)}
+  </span>`;
 }
 
-function toggleRunCard(header) {
-  const body = header.nextElementSibling;
-  const arrow = header.querySelector('.run-expand');
-  const isOpen = body.classList.toggle('open');
-  arrow.innerHTML = isOpen ? '&#9650;' : '&#9660;';
-}
-
-// ─── Inspector panel ──────────────────────────────────────────────────────────
-function renderInspector(agent, runs) {
-  const el = document.getElementById('inspectorBody');
-  el.className = 'inspector-body';
-
-  const allowedTools = agent.allowed_tools || {};
-  const deniedTools  = agent.denied_tools  || {};
-
-  const allowedChips = Object.entries(allowedTools).flatMap(([svc, ops]) =>
-    (ops || []).map(op => `<span class="chip chip-green">${escHtml(svc)}.${escHtml(op)}</span>`)
-  ).join('') || '<span class="chip chip-gray">none</span>';
-
-  const deniedChips = Object.entries(deniedTools).flatMap(([svc, ops]) =>
-    (ops || []).map(op => `<span class="chip chip-red">${escHtml(svc)}.${escHtml(op)}</span>`)
-  ).join('') || '<span class="chip chip-gray">none</span>';
-
-  const recentRuns = (runs || []).slice(0, 5);
-  const runsHtml = recentRuns.length ? recentRuns.map(r => {
-    const ts = r.id ? r.id.replace('.json','') : (r.started_at || '');
-    const stCls = 'run-status-' + (r.status || 'unknown');
-    const preview = (r.output || '').substring(0, 60);
-    return `<div class="insp-run-item" onclick="jumpToRun('${escHtml(r.id || '')}')">
-      <div class="insp-run-row">
-        <span class="run-status-badge ${stCls}" style="font-size:9px;padding:1px 6px">${r.status || '?'}</span>
-        <span class="run-ts">${escHtml(formatTs(ts))}</span>
-      </div>
-      <div class="insp-run-preview">${escHtml(preview)}</div>
-    </div>`;
-  }).join('') : '<div style="font-size:11px;color:var(--muted)">No runs yet.</div>';
-
-  el.innerHTML = `
-    <div class="insp-section">
-      <div class="insp-label">Agent</div>
-      <div class="insp-name">${escHtml(agent.name)}</div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px;">
-        <span class="badge-template">${escHtml(agent.template_name || '')}</span>
-        <span class="status-badge ${agent.enabled ? 'enabled' : 'disabled'}" id="statusBadge">
-          ${agent.enabled ? '&#11044; Enabled' : '&#9675; Disabled'}
-        </span>
-      </div>
-      ${agent.description ? `<div class="insp-desc">${escHtml(agent.description)}</div>` : ''}
-    </div>
-
-    <div class="insp-divider"></div>
-
-    <div class="insp-section">
-      <div class="insp-label">Allowed Tools</div>
-      <div class="chips-row">${allowedChips}</div>
-    </div>
-
-    <div class="insp-section">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div class="insp-label">Denied Tools</div>
-        <button class="insp-toggle-btn" onclick="toggleDenied(this)">show</button>
-      </div>
-      <div class="chips-row" id="deniedChips" style="display:none">${deniedChips}</div>
-    </div>
-
-    <div class="insp-divider"></div>
-
-    <div class="insp-section">
-      <div class="insp-label">Run Agent</div>
-      <textarea class="task-input" id="inspTask" placeholder="Optional: override task description..."></textarea>
-      <div class="btn-row" style="margin-top:6px;">
-        <button class="btn btn-primary" onclick="startRun(false)">Run</button>
-        <button class="btn btn-secondary" onclick="startRun(true)">Dry Run</button>
-      </div>
-    </div>
-
-    <div class="insp-divider"></div>
-
-    <div class="insp-section">
-      <div class="toggle-row">
-        <span class="toggle-label">Agent Enabled</span>
-        <label class="toggle-switch">
-          <input type="checkbox" id="enableToggle" ${agent.enabled ? 'checked' : ''} onchange="toggleEnable(this)">
-          <div class="toggle-slider"></div>
-        </label>
-      </div>
-    </div>
-
-    <div class="insp-divider"></div>
-
-    <div class="insp-section">
-      <div class="insp-label">Recent Runs</div>
-      <div class="insp-runs">${runsHtml}</div>
-    </div>
-  `;
-}
-
-function toggleDenied(btn) {
-  const el = document.getElementById('deniedChips');
-  if (!el) return;
-  const hidden = el.style.display === 'none';
-  el.style.display = hidden ? '' : 'none';
-  btn.textContent = hidden ? 'hide' : 'show';
-}
-
-async function toggleEnable(checkbox) {
-  const slug = selectedSlug;
-  if (!slug) return;
-  const enable = checkbox.checked;
+// ── Toggle enable/disable ─────────────────────────────
+async function toggleAgent(slug, enabled) {
+  const endpoint = enabled ? 'enable' : 'disable';
   try {
-    const res = await fetch(`/api/agents/${slug}/${enable ? 'enable' : 'disable'}`, { method: 'POST' });
-    if (!res.ok) throw new Error(await res.text());
-    // Update local state
-    const agent = agents.find(a => a.slug === slug);
-    if (agent) {
-      agent.enabled = enable;
-      renderSidebar();
-      const badge = document.getElementById('statusBadge');
-      if (badge) {
-        badge.className = 'status-badge ' + (enable ? 'enabled' : 'disabled');
-        badge.innerHTML = enable ? '&#11044; Enabled' : '&#9675; Disabled';
-      }
+    await fetch(`/api/agents/${slug}/${endpoint}`, { method: 'POST' });
+    const a = agents.find(x => x.slug === slug);
+    if (a) a.enabled = enabled;
+    renderAgentList();
+    if (slug === selectedSlug) {
+      const wsDot = document.getElementById('ws-status-dot');
+      wsDot.className = `w-2 h-2 rounded-full ${enabled ? 'bg-primary' : 'bg-outline'}`;
+      document.getElementById('insp-status').innerHTML = enabled
+        ? '<span class="text-primary">● Active</span>'
+        : '<span class="text-outline">● Inactive</span>';
+      const toggleBtn = document.getElementById('toggle-enabled-btn');
+      toggleBtn.textContent = enabled ? 'Disable Agent' : 'Enable Agent';
     }
-  } catch(e) {
-    checkbox.checked = !enable; // revert
-    alert('Failed to update agent: ' + e.message);
+  } catch (e) {
+    console.error('Toggle failed', e);
   }
 }
 
-// ─── Run / SSE ────────────────────────────────────────────────────────────────
-function startRun(isDryRun) {
+async function toggleAgentEnabled() {
   if (!selectedSlug) return;
-  const task = (document.getElementById('inspTask')?.value || '').trim();
-  const slug = selectedSlug;
-
-  isRunning = true;
-  document.getElementById('mainTitle').textContent = 'Running: ' + (agents.find(a => a.slug === slug)?.name || slug);
-  document.getElementById('btnClear').style.display = '';
-
-  const mainContent = document.getElementById('mainContent');
-  mainContent.innerHTML = '<div class="log-events" id="logEvents"></div>';
-
-  const url = `/api/agents/${slug}/run/stream?dry_run=${isDryRun}${task ? '&task=' + encodeURIComponent(task) : ''}`;
-
-  if (currentEventSource) { currentEventSource.close(); }
-  currentEventSource = new EventSource(url);
-
-  currentEventSource.onmessage = function(e) {
-    try {
-      const event = JSON.parse(e.data);
-      appendLogEvent(event);
-      if (event.type === 'done' || event.type === 'error') {
-        currentEventSource.close();
-        currentEventSource = null;
-        isRunning = false;
-        // Refresh inspector runs
-        fetchRuns(slug).then(runs => {
-          const agent = agents.find(a => a.slug === slug);
-          if (agent) renderInspector(agent, runs);
-        });
-      }
-    } catch(ex) {}
-  };
-
-  currentEventSource.onerror = function() {
-    if (isRunning) {
-      appendLogEvent({ type: 'error', message: 'Connection lost or stream ended.' });
-      isRunning = false;
-    }
-    currentEventSource?.close();
-    currentEventSource = null;
-  };
+  const a = agents.find(x => x.slug === selectedSlug);
+  if (!a) return;
+  await toggleAgent(selectedSlug, !a.enabled);
 }
 
-function stopRun() {
-  if (currentEventSource) { currentEventSource.close(); currentEventSource = null; }
-  isRunning = false;
+// ── Runs ──────────────────────────────────────────────
+async function loadRuns() {
+  if (!selectedSlug) return;
+  try {
+    const res = await fetch(`/api/agents/${selectedSlug}/runs`);
+    const data = await res.json();
+    const runs = data.runs || [];
+    document.getElementById('ws-run-count').textContent = `${runs.length} run${runs.length !== 1 ? 's' : ''}`;
+
+    const el = document.getElementById('runs-list');
+    if (runs.length === 0) {
+      el.innerHTML = '<div class="font-mono text-xs text-on-surface-variant/30">No runs yet.</div>';
+      return;
+    }
+    el.innerHTML = runs.slice(0, 10).map(r => {
+      const ts = r.timestamp ? new Date(r.timestamp * 1000).toLocaleString() : r.id;
+      const statusCls = r.status === 'completed' ? 'text-primary' : 'text-error';
+      return `<div class="flex items-center justify-between py-1 border-b border-white/5">
+        <span class="font-mono text-[10px] text-on-surface-variant truncate max-w-[60%]">${escHtml(ts)}</span>
+        <span class="font-mono text-[10px] ${statusCls}">${escHtml(r.status || '?')}</span>
+      </div>`;
+    }).join('');
+  } catch {}
+}
+
+// ── SSE Run ───────────────────────────────────────────
+function runAgent(dryRun) {
+  if (!selectedSlug) return;
+  if (sseSource) { sseSource.close(); sseSource = null; }
+
+  const task = document.getElementById('run-task-input').value.trim();
+  const log = document.getElementById('terminal-log');
+  log.innerHTML = '';
+
+  const params = new URLSearchParams({ dry_run: dryRun });
+  if (task) params.set('task', task);
+
+  sseSource = new EventSource(`/api/agents/${selectedSlug}/run/stream?${params}`);
+
+  sseSource.onmessage = (ev) => {
+    let event;
+    try { event = JSON.parse(ev.data); } catch { return; }
+    appendLogEvent(event);
+    if (event.type === 'done' || event.type === 'error') {
+      sseSource.close();
+      sseSource = null;
+      loadRuns();
+    }
+  };
+
+  sseSource.onerror = () => {
+    appendLogLine('<span class="log-error">Connection lost.</span>');
+    sseSource.close();
+    sseSource = null;
+  };
 }
 
 function appendLogEvent(event) {
-  const container = document.getElementById('logEvents');
-  if (!container) return;
-
-  let html = '';
-  const t = event.type;
-
-  if (t === 'header') {
-    html = `<div class="log-event log-event-header">
-      <div class="ev-row"><span class="ev-label">Agent</span><span>${escHtml(event.agent || '')}</span></div>
-      <div class="ev-row"><span class="ev-label">Model</span><span>${escHtml(event.model || '')}</span></div>
-      <div class="ev-row"><span class="ev-label">Task</span><span>${escHtml((event.task || '').substring(0, 100))}</span></div>
-      <div class="ev-row"><span class="ev-label">Tools</span><span>${escHtml((event.tools || []).join(', ') || 'none')}</span></div>
-    </div>`;
-  } else if (t === 'llm') {
-    html = `<div class="log-event log-event-llm">
-      <div class="llm-icon">&#129302;</div>
-      <div class="llm-text">${escHtml(event.text || '')}</div>
-    </div>`;
-  } else if (t === 'tool_call') {
-    const argsPreview = JSON.stringify(event.input || {}).substring(0, 80);
-    html = `<div class="log-event log-event-tool-call">
-      <span class="tool-icon">&#9881;</span>
-      <span>${escHtml(event.name || '')}(${escHtml(argsPreview)})</span>
-    </div>`;
-  } else if (t === 'tool_result') {
-    html = `<div class="log-event log-event-tool-result">${escHtml(event.preview || '')}</div>`;
-  } else if (t === 'done') {
-    html = `<div class="log-event log-event-done">
-      <div class="done-label">&#10003; Completed &mdash; ${event.tool_calls || 0} tool call${event.tool_calls !== 1 ? 's' : ''}</div>
-      <div class="done-output">${escHtml(event.output || '')}</div>
-    </div>`;
-  } else if (t === 'error') {
-    html = `<div class="log-event log-event-error">&#9888; Error: ${escHtml(event.message || 'Unknown error')}</div>`;
+  let line = '';
+  switch (event.type) {
+    case 'header':
+      line = `<div class="log-header">▶ ${escHtml(event.agent || '')} ${event.task ? '— ' + escHtml(event.task) : ''}</div>`;
+      break;
+    case 'llm':
+      line = `<div class="log-llm">${escHtml(event.text || '')}</div>`;
+      break;
+    case 'tool_call':
+      line = `<div class="log-tool-call">⚙ ${escHtml(event.name || '')} ${event.input ? '<span class="text-on-surface-variant/50">' + escHtml(JSON.stringify(event.input)) + '</span>' : ''}</div>`;
+      break;
+    case 'tool_result':
+      line = `<div class="log-tool-result">✓ ${escHtml(event.preview || '')}</div>`;
+      break;
+    case 'done':
+      line = `<div class="log-done mt-2">━━ ${escHtml(event.status || 'done')} · ${event.tool_calls || 0} tool calls ━━</div>`;
+      break;
+    case 'error':
+      line = `<div class="log-error">✕ ${escHtml(event.message || 'Error')}</div>`;
+      break;
+    default:
+      line = `<div class="text-on-surface-variant/40">${escHtml(JSON.stringify(event))}</div>`;
   }
-
-  if (html) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    container.appendChild(div.firstElementChild);
-    container.scrollIntoView({ block: 'end' });
-    document.getElementById('mainContent').scrollTop = document.getElementById('mainContent').scrollHeight;
-  }
+  appendLogLine(line);
 }
 
-// ─── Clear ────────────────────────────────────────────────────────────────────
-document.getElementById('btnClear').addEventListener('click', () => {
-  stopRun();
-  if (selectedSlug) {
-    const agent = agents.find(a => a.slug === selectedSlug);
-    if (agent) {
-      fetchRuns(selectedSlug).then(runs => renderMainRuns(runs, agent));
-      document.getElementById('mainTitle').textContent = agent.name;
-    }
-  }
-});
+function appendLogLine(html) {
+  const log = document.getElementById('terminal-log');
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  log.appendChild(div.firstChild || div);
+  log.scrollTop = log.scrollHeight;
+}
 
-// ─── New agent modal ──────────────────────────────────────────────────────────
-document.getElementById('btnNewAgent').addEventListener('click', openModal);
-document.getElementById('btnModalCancel').addEventListener('click', closeModal);
-document.getElementById('btnPreview').addEventListener('click', previewSpec);
-document.getElementById('btnCreate').addEventListener('click', createAgent);
+function clearLog() {
+  document.getElementById('terminal-log').innerHTML =
+    '<div class="text-on-surface-variant/30">Awaiting run…</div>';
+}
 
-document.getElementById('modalOverlay').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
+// ── Modal ─────────────────────────────────────────────
 function openModal() {
-  previewedSpec = null;
-  document.getElementById('modalRequest').value = '';
-  document.getElementById('specPreview').style.display = 'none';
-  document.getElementById('specPreview').innerHTML = '';
-  document.getElementById('btnCreate').disabled = true;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-  setTimeout(() => document.getElementById('modalRequest').focus(), 50);
+  document.getElementById('modal-backdrop').classList.remove('hidden');
+  document.getElementById('spec-preview').classList.add('hidden');
+  document.getElementById('modal-error').classList.add('hidden');
+  document.getElementById('agent-intent').value = document.getElementById('agent-intent').value || '';
+  document.getElementById('agent-intent').focus();
 }
 
 function closeModal() {
-  document.getElementById('modalOverlay').classList.add('hidden');
-  previewedSpec = null;
+  document.getElementById('modal-backdrop').classList.add('hidden');
+  previewData = null;
 }
 
-async function previewSpec() {
-  const request = document.getElementById('modalRequest').value.trim();
-  if (!request) { alert('Please describe the agent.'); return; }
+// Close on backdrop click
+document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modal-backdrop')) closeModal();
+});
 
-  const btn = document.getElementById('btnPreview');
-  btn.innerHTML = '<span class="spinner"></span> Loading...';
+async function previewSpec() {
+  const intent = document.getElementById('agent-intent').value.trim();
+  if (!intent) return;
+
+  const btn = document.getElementById('preview-btn');
+  btn.textContent = 'Generating…';
   btn.disabled = true;
+
+  document.getElementById('modal-error').classList.add('hidden');
 
   try {
     const res = await fetch('/api/factory/preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ request }),
+      body: JSON.stringify({ request: intent }),
     });
     if (!res.ok) throw new Error((await res.json()).detail || 'Preview failed');
-    const spec = await res.json();
-    previewedSpec = spec;
-    renderSpecPreview(spec);
-    document.getElementById('btnCreate').disabled = false;
-  } catch(e) {
-    document.getElementById('specPreview').style.display = 'block';
-    document.getElementById('specPreview').innerHTML = `<div class="log-event log-event-error">&#9888; ${escHtml(e.message)}</div>`;
+    previewData = await res.json();
+
+    // Populate preview
+    document.getElementById('prev-name').innerHTML =
+      `<span class="material-symbols-outlined text-primary-fixed text-[16px]">label</span> ${escHtml(previewData.name)}`;
+    document.getElementById('prev-template').innerHTML =
+      `<span class="material-symbols-outlined text-secondary text-[16px]">account_tree</span> ${escHtml(previewData.template_name || '—')}`;
+    document.getElementById('prev-desc').textContent = previewData.description || '—';
+
+    const toolsEl = document.getElementById('prev-tools');
+    const allTools = [
+      ...Object.keys(previewData.allowed_tools || {}).map(t => ({ t, ok: true })),
+      ...Object.keys(previewData.denied_tools || {}).map(t => ({ t, ok: false })),
+    ];
+    toolsEl.innerHTML = allTools.length
+      ? allTools.map(({ t, ok }) => `
+          <div class="flex items-center gap-1 bg-white/5 border border-white/5 px-1.5 py-0.5 rounded">
+            <span class="material-symbols-outlined fill-icon text-[12px] ${ok ? 'text-primary' : 'text-error'}">${ok ? 'check_circle' : 'cancel'}</span>
+            <span class="font-mono text-[10px]">${escHtml(t)}</span>
+          </div>`).join('')
+      : '<span class="font-mono text-[10px] text-on-surface-variant/30">None detected</span>';
+
+    document.getElementById('spec-preview').classList.remove('hidden');
+  } catch (e) {
+    showModalError(e.message);
   } finally {
-    btn.innerHTML = 'Preview Spec';
+    btn.textContent = 'Preview spec →';
     btn.disabled = false;
   }
 }
 
-function renderSpecPreview(spec) {
-  const allowedHtml = Object.entries(spec.allowed_tools || {}).flatMap(([svc, ops]) =>
-    (ops || []).map(op => `<span class="chip chip-green">${escHtml(svc)}.${escHtml(op)}</span>`)
-  ).join('') || '<span class="chip chip-gray">none</span>';
-
-  const deniedHtml = Object.entries(spec.denied_tools || {}).flatMap(([svc, ops]) =>
-    (ops || []).map(op => `<span class="chip chip-red">${escHtml(svc)}.${escHtml(op)}</span>`)
-  ).join('') || '<span class="chip chip-gray">none</span>';
-
-  const el = document.getElementById('specPreview');
-  el.style.display = 'block';
-  el.innerHTML = `<div class="spec-card">
-    <div class="spec-card-name">${escHtml(spec.name || '')}</div>
-    <div class="spec-card-desc">${escHtml(spec.description || '')}</div>
-    <div class="spec-field">
-      <div class="spec-field-label">Template</div>
-      <span class="badge-template">${escHtml(spec.template_name || '')}</span>
-    </div>
-    <div class="spec-field">
-      <div class="spec-field-label">Allowed Tools</div>
-      <div class="chips-row">${allowedHtml}</div>
-    </div>
-    <div class="spec-field">
-      <div class="spec-field-label">Denied Tools</div>
-      <div class="chips-row">${deniedHtml}</div>
-    </div>
-  </div>`;
-}
-
 async function createAgent() {
-  const request = document.getElementById('modalRequest').value.trim();
-  if (!request) return;
+  const intent = document.getElementById('agent-intent').value.trim();
+  if (!intent) {
+    showModalError('Please describe your agent first.');
+    return;
+  }
 
-  const btn = document.getElementById('btnCreate');
-  btn.innerHTML = '<span class="spinner"></span> Creating...';
+  const btn = document.getElementById('create-btn');
+  btn.innerHTML = '<span class="font-mono text-xs">Creating…</span>';
   btn.disabled = true;
+  document.getElementById('modal-error').classList.add('hidden');
 
   try {
     const res = await fetch('/api/agents', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ request, force: false }),
+      body: JSON.stringify({ request: intent, force: false }),
     });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || 'Create failed');
-    }
-    const data = await res.json();
+    if (!res.ok) throw new Error((await res.json()).detail || 'Creation failed');
+    const result = await res.json();
     closeModal();
-    await fetchAgents();
-    if (data.slug) {
-      selectAgent(data.slug);
-    }
-  } catch(e) {
-    alert('Failed to create agent: ' + e.message);
-    btn.innerHTML = 'Create Agent';
+    await loadAgents();
+    selectAgent(result.slug);
+  } catch (e) {
+    showModalError(e.message);
+  } finally {
+    btn.innerHTML = 'Generate Agent <span class="material-symbols-outlined text-[16px]">bolt</span>';
     btn.disabled = false;
   }
 }
 
-// ─── Jump to run ──────────────────────────────────────────────────────────────
-function jumpToRun(id) {
-  // If main panel shows runs, scroll to matching card
-  const cards = document.querySelectorAll('.run-card');
-  // No direct id on cards currently, but we can scroll main to top
-  document.getElementById('mainContent').scrollTop = 0;
+function showModalError(msg) {
+  const el = document.getElementById('modal-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ── Util ──────────────────────────────────────────────
 function escHtml(str) {
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/"/g, '&quot;');
 }
-
-function formatTs(ts) {
-  // ts format: 20250519T143022Z or ISO
-  if (!ts) return '';
-  try {
-    // try ISO parse first
-    const d = new Date(ts.length === 16 ?
-      ts.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/, '$1-$2-$3T$4:$5:$6Z') :
-      ts
-    );
-    if (!isNaN(d)) return d.toLocaleString();
-  } catch(e) {}
-  return ts;
-}
-
-// ─── Start ────────────────────────────────────────────────────────────────────
-boot();
 </script>
 </body>
 </html>
