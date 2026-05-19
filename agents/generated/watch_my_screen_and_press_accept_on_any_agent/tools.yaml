@@ -1,0 +1,104 @@
+allowed_tools:
+
+
+  screen:
+
+    - capture
+
+    - find_element
+
+
+  mouse:
+
+    - click
+
+    - move
+
+
+  vision:
+
+    - analyze_screenshot
+
+
+
+
+denied_tools:
+
+
+  screen:
+
+    - record_video
+
+    - stream
+
+
+  mouse:
+
+    - drag
+
+    - right_click
+
+
+  keyboard:
+
+    - type_text
+
+    - run_command
+
+    - hotkey
+
+
+  shell:
+
+    - execute
+
+    - run_command
+
+    - eval
+
+
+  filesystem:
+
+    - delete
+
+    - write_sensitive
+
+    - unlink
+
+    - rmtree
+
+
+  package_manager:
+
+    - install
+
+    - uninstall
+
+    - upgrade
+
+
+  cloud:
+
+    - deploy
+
+    - provision
+
+    - destroy
+
+
+
+
+approval_required_for:
+
+  - sending_email
+
+  - deleting_files
+
+  - modifying_code
+
+  - installing_packages
+
+  - cloud_deployment
+
+  - posting_to_external_services
+

@@ -17,6 +17,11 @@ _RESEARCH_KEYWORDS = {
     "research", "web", "report", "sources", "summarize", "document",
     "paper", "search", "crawl", "scrape",
 }
+_COMPUTER_USE_KEYWORDS = {
+    "screen", "codex", "popup", "pop-up", "pop", "accept", "click",
+    "gui", "desktop", "window", "screenshot", "display", "button",
+    "computer", "visual", "dialog", "modal", "confirm", "approve",
+}
 
 # Slack keywords are signal for tool grants but not template selection on their own
 _SLACK_KEYWORDS = {"slack", "post", "message", "dm"}
@@ -32,7 +37,10 @@ def select_template(request: str) -> str:
     briefing_score = len(tokens & _BRIEFING_KEYWORDS)
     monitor_score = len(tokens & _MONITOR_KEYWORDS)
     research_score = len(tokens & _RESEARCH_KEYWORDS)
+    computer_use_score = len(tokens & _COMPUTER_USE_KEYWORDS)
 
+    if computer_use_score > max(briefing_score, monitor_score, research_score):
+        return "computer_use_agent"
     if briefing_score >= monitor_score and briefing_score >= research_score:
         return "briefing_agent"
     if monitor_score >= research_score:
@@ -80,6 +88,16 @@ def map_tools(request: str) -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]
     if tokens & {"web", "research", "search", "crawl", "scrape"}:
         allowed["web"] = ["fetch_url", "search"]
         denied["web"] = []
+
+    # Computer use / screen watching
+    if tokens & {"screen", "codex", "popup", "pop-up", "accept", "click",
+                 "gui", "desktop", "computer", "visual", "dialog", "confirm"}:
+        allowed["screen"] = ["capture", "find_element"]
+        allowed["mouse"] = ["click", "move"]
+        allowed["vision"] = ["analyze_screenshot"]
+        denied["screen"] = ["record_video", "stream"]
+        denied["mouse"] = ["drag", "right_click"]
+        denied["keyboard"] = ["type_text", "run_command", "hotkey"]
 
     # Always deny dangerous capabilities
     denied["shell"] = ["execute", "run_command", "eval"]
