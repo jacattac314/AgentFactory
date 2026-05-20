@@ -441,12 +441,16 @@ async function loadStatus() {
 
     const dot = document.getElementById('llm-dot');
     const txt = document.getElementById('llm-status-text');
+    // API returns: { llm: { ready, detail }, slack: { ready, detail }, web: { ready, detail }, ... }
     const llm = data.llm || {};
 
-    if (llm.ok) {
+    if (llm.ready) {
       dot.className = 'w-1.5 h-1.5 rounded-full bg-primary pulse';
-      const model = llm.model || 'LLM';
-      txt.textContent = model.length > 24 ? model.slice(0, 24) + '…' : model;
+      const detail = llm.detail || 'LLM ready';
+      // Extract model name from detail string like "OpenAI-compat → http://... model=foo"
+      const modelMatch = detail.match(/model=(\S+)/);
+      const label = modelMatch ? modelMatch[1] : 'LLM';
+      txt.textContent = label.length > 24 ? label.slice(0, 24) + '…' : label;
       txt.className = 'font-mono text-[10px] text-primary uppercase tracking-wider';
     } else {
       dot.className = 'w-1.5 h-1.5 rounded-full bg-error';
@@ -454,15 +458,16 @@ async function loadStatus() {
       txt.className = 'font-mono text-[10px] text-error uppercase tracking-wider';
     }
 
-    // Tool indicators
+    // Tool indicators — top-level keys excluding 'llm'
     const toolBar = document.getElementById('tool-indicators');
     toolBar.innerHTML = '';
-    const tools = data.tools || {};
-    const iconMap = { web: 'language', email: 'mail', slack: 'hub', github: 'code' };
-    Object.entries(tools).forEach(([name, ok]) => {
+    const iconMap = { web: 'language', gmail: 'mail', slack: 'hub', github: 'code' };
+    Object.entries(data).forEach(([name, val]) => {
+      if (name === 'llm' || typeof val !== 'object') return;
+      const ok = val.ready === true;
       const icon = iconMap[name] || 'extension';
       const el = document.createElement('div');
-      el.title = `${name}: ${ok ? 'available' : 'unavailable'}`;
+      el.title = `${name}: ${val.detail || (ok ? 'available' : 'unavailable')}`;
       el.className = 'flex items-center gap-0.5 opacity-70';
       el.innerHTML = `
         <span class="material-symbols-outlined text-[14px] ${ok ? 'text-on-surface-variant' : 'text-on-surface-variant/30'}">${icon}</span>
