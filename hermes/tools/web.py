@@ -1,9 +1,12 @@
 """Web tool adapter — search and fetch web pages.
 
 Optional env vars:
-  SERPER_API_KEY   — for Google search via serper.dev (free tier: 2500 queries/month)
+  SERPER_API_KEY   — Google search via serper.dev (free tier: 2500 queries/month)
 
-Falls back to DuckDuckGo HTML scraping if no key is set.
+Search priority:
+  1. Serper (if SERPER_API_KEY set) — highest quality, Google results
+  2. ddgs library — proper DuckDuckGo API, no scraping
+  3. DuckDuckGo HTML scrape — last resort fallback
 """
 
 from __future__ import annotations
@@ -50,7 +53,7 @@ class WebAdapter:
             return {"url": url, "error": str(e)}
 
     def search(self, query: str, num_results: int = 5) -> List[Dict[str, Any]]:
-        """Search the web. Uses Serper if SERPER_API_KEY is set, else DuckDuckGo."""
+        """Search the web. Uses Serper > ddgs > HTML scrape fallback."""
         if self._serper_key:
             return self._serper_search(query, num_results)
         return self._ddg_search(query, num_results)
@@ -73,10 +76,23 @@ class WebAdapter:
                 for r in data.get("organic", [])[:num]
             ]
         except Exception as e:
-            return [{"error": str(e)}]
+            return self._ddg_search(query, num)  # fall through to DDG on any error
 
     def _ddg_search(self, query: str, num: int) -> List[Dict[str, Any]]:
-        """DuckDuckGo HTML search — no API key required."""
+        """DuckDuckGo search — tries ddgs library first, falls back to HTML scrape."""
+        # ── Try ddgs package (proper API, no scraping) ────────────────────────
+        try:
+            from ddgs import DDGS
+            results = list(DDGS().text(query, max_results=num))
+            if results:
+                return [
+                    {"title": r.get("title",""), "url": r.get("href",""), "snippet": r.get("body","")}
+                    for r in results
+                ]
+        except Exception:
+            pass
+
+        # ── Fallback: DuckDuckGo HTML scrape ─────────────────────────────────
         try:
             import httpx
             from bs4 import BeautifulSoup
@@ -85,6 +101,8 @@ class WebAdapter:
             headers = {"User-Agent": "Mozilla/5.0 (Hermes Agent; research)"}
             resp = httpx.get("https://html.duckduckgo.com/html/", params=params,
                              headers=headers, follow_redirects=True, timeout=10)
+            if resp.status_code != 200:
+                return [{"error": f"DuckDuckGo returned {resp.status_code}"}]
             soup = BeautifulSoup(resp.text, "html.parser")
             results = []
             for r in soup.select(".result__body")[:num]:
@@ -96,7 +114,7 @@ class WebAdapter:
                     "url":     url_el.get_text(strip=True)     if url_el     else "",
                     "snippet": snippet_el.get_text(strip=True) if snippet_el else "",
                 })
-            return results or [{"message": "No results found"}]
+            return results or [{"error": "No results found"}]
         except Exception as e:
             return [{"error": str(e)}]
 
