@@ -1,0 +1,20 @@
+{
+  "status": "completed",
+  "output": "Based on the search results: Top AI stories include advances in multimodal models and new open-source releases. Daily briefing complete.",
+  "tool_calls": [
+    {
+      "tool": "web_search",
+      "input": {
+        "query": "latest AI news 2025"
+      },
+      "result": [
+        {
+          "message": "No results found"
+        }
+      ]
+    }
+  ],
+  "started_at": "2026-05-21T03:15:57.065581+00:00",
+  "finished_at": "2026-05-21T03:15:57.065553+00:00",
+  "model": "mock-llm"
+}
