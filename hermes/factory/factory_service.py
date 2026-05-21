@@ -8,6 +8,7 @@ from typing import Optional
 
 from .agent_spec import AgentSpec, name_from_request, slugify
 from .file_generator import generate_files
+from .llm_spec_builder import build_spec_with_llm
 from .registry_updater import load_registry, save_registry
 from .template_selector import default_approval_gates, map_tools, select_template
 from .validators.generated_agent_validator import validate_generated_agent
@@ -33,17 +34,27 @@ def create_agent(
     """
     base_dir = base_dir or Path.cwd()
 
-    # 1. Build spec
-    template_name = template_override or select_template(request)
-    allowed, denied = map_tools(request)
-    approval_gates = default_approval_gates()
-    name = name_from_request(request)
-    slug = slugify(name)
+    # 1. Build spec — try LLM first, fall back to keyword heuristic
+    llm_result = None if template_override else build_spec_with_llm(request)
+
+    if llm_result:
+        name, description, template_name, allowed, denied, approval_gates = llm_result
+        slug = slugify(name)
+        print("  [factory] Using LLM-generated spec.")
+    else:
+        if not template_override:
+            print("  [factory] LLM unavailable — using keyword heuristic.")
+        template_name = template_override or select_template(request)
+        allowed, denied = map_tools(request)
+        approval_gates = default_approval_gates()
+        name = name_from_request(request)
+        slug = slugify(name)
+        description = f"Auto-generated agent: {request[:120]}"
 
     spec = AgentSpec(
         name=name,
         slug=slug,
-        description=f"Auto-generated agent: {request[:120]}",
+        description=description,
         agent_type=template_name,
         user_request=request,
         template_name=template_name,

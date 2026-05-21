@@ -1,28 +1,20 @@
-name: "Research Web Sources And Write A Weekly Report Agent"
-slug: "research_web_sources_and_write_a_weekly_report_agent"
-description: "Auto-generated agent: Research web sources and write a weekly report"
-version: "0.1.0"
+name: Research Web Sources And Write A Weekly Report Agent
+slug: research_web_sources_and_write_a_weekly_report_agent
+description: 'Auto-generated agent: Research web sources and write a weekly report'
+version: 0.1.0
 enabled: false
-template_name: "research_agent"
-agent_type: "research_agent"
+template_name: research_agent
+agent_type: research_agent
 entrypoint: workflow.py
 schedule: null
-created_at: "2026-05-18T17:19:54.484482+00:00"
-
+created_at: '2026-05-18T17:19:54.484482+00:00'
 approval_required_for:
+- sending_email
+- deleting_files
+- modifying_code
+- installing_packages
+- cloud_deployment
+- posting_to_external_services
+user_request: 'Research web sources and write a weekly report
 
-  - sending_email
-
-  - deleting_files
-
-  - modifying_code
-
-  - installing_packages
-
-  - cloud_deployment
-
-  - posting_to_external_services
-
-
-user_request: |
-  Research web sources and write a weekly report
+  '

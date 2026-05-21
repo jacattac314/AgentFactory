@@ -41,22 +41,30 @@ class RunResult:
     model:       str           = ""
 
 
+def _log(event: dict, callback=None) -> None:
+    """Emit a structured log event to the optional callback."""
+    if callback:
+        callback(event)
+
+
 def run_agent(
     slug: str,
     task: Optional[str] = None,
     dry_run: bool = False,
     base_dir: Optional[Path] = None,
     stream: bool = True,
+    log_callback=None,   # Optional[Callable[[dict], None]]
 ) -> RunResult:
     """
     Execute a Hermes agent.
 
     Args:
-        slug:     Agent slug (must exist in agents/generated/)
-        task:     Optional override task. Defaults to agent description.
-        dry_run:  If True, skip all real tool calls and return planned actions.
-        base_dir: Project root. Defaults to cwd.
-        stream:   Print progress to stdout as it runs.
+        slug:         Agent slug (must exist in agents/generated/)
+        task:         Optional override task. Defaults to agent description.
+        dry_run:      If True, skip all real tool calls and return planned actions.
+        base_dir:     Project root. Defaults to cwd.
+        stream:       Print progress to stdout as it runs.
+        log_callback: Optional callable that receives structured log event dicts.
     """
     base_dir  = base_dir or Path.cwd()
     agent_dir = base_dir / "agents" / "generated" / slug
@@ -74,7 +82,15 @@ def run_agent(
     task          = task or agent_cfg.get("description", "Run your configured task.")
 
     if dry_run:
-        return _dry_run(slug, task, allowed_tools)
+        _log({"type": "header", "agent": slug, "model": "dry-run", "task": task,
+              "tools": list(allowed_tools.keys())}, log_callback)
+        result = _dry_run(slug, task, allowed_tools)
+        planned = [f"{svc}.{op}" for svc, ops in allowed_tools.items() for op in (ops or [])]
+        for action in planned:
+            _log({"type": "tool_call", "name": action, "input": {}}, log_callback)
+        _log({"type": "done", "status": "dry_run", "output": result.output,
+              "tool_calls": len(planned)}, log_callback)
+        return result
 
     # ── Load backend ──────────────────────────────────────────────────────────
     try:
@@ -93,6 +109,9 @@ def run_agent(
     if stream:
         _print_header(slug, task, tools, model_name)
 
+    _log({"type": "header", "agent": slug, "model": model_name, "task": task,
+          "tools": list(tools.keys())}, log_callback)
+
     # ── Agent loop ────────────────────────────────────────────────────────────
     messages: List[Dict[str, Any]] = [{"role": "user", "content": task}]
     tool_call_log: List[Dict] = []
@@ -102,12 +121,15 @@ def run_agent(
         try:
             turn_result = backend.chat(messages, tool_defs, prompt_text)
         except Exception as e:
-            return RunResult(slug, "error", "", error=f"LLM call failed: {e}",
-                             model=model_name)
+            err_msg = f"LLM call failed: {e}"
+            _log({"type": "error", "message": err_msg}, log_callback)
+            return RunResult(slug, "error", "", error=err_msg, model=model_name)
 
-        if turn_result.text_parts and stream:
+        if turn_result.text_parts:
             for t in turn_result.text_parts:
-                print(f"\n  [llm]    {t[:500]}" + ("…" if len(t) > 500 else ""))
+                if stream:
+                    print(f"\n  [llm]    {t[:500]}" + ("…" if len(t) > 500 else ""))
+                _log({"type": "llm", "text": t}, log_callback)
 
         # Done — no more tool calls
         if turn_result.stop_reason in ("end_turn", "max_tokens") and not turn_result.tool_calls:
@@ -122,6 +144,8 @@ def run_agent(
             )
             if stream:
                 _print_footer(result)
+            _log({"type": "done", "status": "completed", "output": final_text,
+                  "tool_calls": len(tool_call_log)}, log_callback)
             _save_run(agent_dir, result)
             return result
 
@@ -130,6 +154,7 @@ def run_agent(
         for tc in turn_result.tool_calls:
             if stream:
                 print(f"\n  [tool]   {tc.name}({json.dumps(tc.input, separators=(',',':'))[:120]})")
+            _log({"type": "tool_call", "name": tc.name, "input": tc.input}, log_callback)
 
             prefix = tc.name.split("_")[0]
             denied = tools_cfg.get("denied_tools", {}).get(prefix, [])
@@ -145,9 +170,10 @@ def run_agent(
                 except Exception as e:
                     result_content = {"error": str(e)}
 
+            preview = str(result_content)[:200]
             if stream:
-                preview = str(result_content)[:200]
                 print(f"  [result] {preview}" + ("…" if len(str(result_content)) > 200 else ""))
+            _log({"type": "tool_result", "preview": preview}, log_callback)
 
             tool_call_log.append({"tool": tc.name, "input": tc.input, "result": result_content})
             results.append(result_content)
@@ -159,8 +185,9 @@ def run_agent(
         else:
             messages.append(backend.build_tool_results_message(turn_result, results))
 
-    return RunResult(slug, "error", "", error=f"Exceeded {max_turns} turns without finishing.",
-                     model=model_name)
+    err_msg = f"Exceeded {max_turns} turns without finishing."
+    _log({"type": "error", "message": err_msg}, log_callback)
+    return RunResult(slug, "error", "", error=err_msg, model=model_name)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
