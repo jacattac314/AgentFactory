@@ -82,7 +82,15 @@ def run_agent(
     task          = task or agent_cfg.get("description", "Run your configured task.")
 
     if dry_run:
-        return _dry_run(slug, task, allowed_tools)
+        _log({"type": "header", "agent": slug, "model": "dry-run", "task": task,
+              "tools": list(allowed_tools.keys())}, log_callback)
+        result = _dry_run(slug, task, allowed_tools)
+        planned = [f"{svc}.{op}" for svc, ops in allowed_tools.items() for op in (ops or [])]
+        for action in planned:
+            _log({"type": "tool_call", "name": action, "input": {}}, log_callback)
+        _log({"type": "done", "status": "dry_run", "output": result.output,
+              "tool_calls": len(planned)}, log_callback)
+        return result
 
     # ── Load backend ──────────────────────────────────────────────────────────
     try:
