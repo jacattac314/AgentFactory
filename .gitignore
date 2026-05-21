@@ -10,3 +10,6 @@ build/
 .env
 *.pem
 *.key
+
+# Runtime-generated — rebuilt from agent.yaml files on startup
+registry.yaml

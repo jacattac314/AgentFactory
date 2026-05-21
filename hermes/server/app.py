@@ -66,11 +66,24 @@ class EnableDisableResponse(BaseModel):
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 
 def _load_registry() -> Dict[str, Any]:
-    if not REGISTRY_PATH.exists():
+    """Build registry by scanning agent directories — agent.yaml is the source of truth."""
+    if not AGENTS_DIR.exists():
         return {}
-    with open(REGISTRY_PATH) as f:
-        data = yaml.safe_load(f) or {}
-    return data.get("generated_agents", {})
+    agents = {}
+    for agent_dir in sorted(AGENTS_DIR.iterdir()):
+        yaml_path = agent_dir / "agent.yaml"
+        if not yaml_path.exists():
+            continue
+        with open(yaml_path) as f:
+            data = yaml.safe_load(f) or {}
+        slug = data.get("slug", agent_dir.name)
+        agents[slug] = {
+            "name":          data.get("name", slug),
+            "enabled":       data.get("enabled", False),
+            "template_name": data.get("template_name", ""),
+            "version":       data.get("version", ""),
+        }
+    return agents
 
 
 def _load_agent_meta(slug: str) -> Dict[str, Any]:
@@ -122,16 +135,6 @@ def _set_agent_enabled(slug: str, enabled: bool) -> bool:
     data["enabled"] = enabled
     with open(agent_yaml_path, "w") as f:
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-
-    if REGISTRY_PATH.exists():
-        with open(REGISTRY_PATH) as f:
-            registry = yaml.safe_load(f) or {}
-        agents = registry.get("generated_agents", {})
-        if slug in agents:
-            agents[slug]["enabled"] = enabled
-            registry["generated_agents"] = agents
-            with open(REGISTRY_PATH, "w") as f:
-                yaml.dump(registry, f, default_flow_style=False, sort_keys=False)
 
     return True
 
