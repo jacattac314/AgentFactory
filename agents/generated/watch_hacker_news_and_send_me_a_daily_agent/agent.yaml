@@ -1,0 +1,21 @@
+name: Watch Hacker News And Send Me A Daily Agent
+slug: watch_hacker_news_and_send_me_a_daily_agent
+description: 'Auto-generated agent: Watch Hacker News and send me a daily digest via
+  email'
+version: 0.1.0
+enabled: false
+template_name: briefing_agent
+agent_type: briefing_agent
+entrypoint: workflow.py
+schedule: null
+created_at: '2026-05-21T03:14:13.145870+00:00'
+approval_required_for:
+- sending_email
+- deleting_files
+- modifying_code
+- installing_packages
+- cloud_deployment
+- posting_to_external_services
+user_request: 'Watch Hacker News and send me a daily digest via email
+
+  '

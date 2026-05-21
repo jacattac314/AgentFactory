@@ -27,3 +27,10 @@ generated_agents:
     template_name: research_agent
     version: 0.1.0
     created_at: '2026-05-21T03:07:53.919980+00:00'
+  watch_hacker_news_and_send_me_a_daily_agent:
+    name: Watch Hacker News And Send Me A Daily Agent
+    path: agents/generated/watch_hacker_news_and_send_me_a_daily_agent
+    enabled: false
+    template_name: briefing_agent
+    version: 0.1.0
+    created_at: '2026-05-21T03:14:13.145870+00:00'
